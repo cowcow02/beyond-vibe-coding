@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { districts } from '../data/city';
+import { districts, LEVEL_LABELS } from '../data/city';
 
 interface Props {
   districtId: string;
@@ -39,7 +39,12 @@ export default function BuildingPanel({ districtId, buildingId, currentLevel, on
           </button>
         </div>
         <div className="mt-2 font-mono text-xs text-slate-400">
-          {Math.min(currentLevel + 1, 6)} of 6 floors visible at L{currentLevel}
+          {(() => {
+            const start   = building.floorStartLevel ?? 0;
+            const total   = 6 - start;
+            const visible = Math.max(Math.min(currentLevel - start + 1, total), 0);
+            return `${visible} of ${total} floors visible at L${currentLevel}`;
+          })()}
         </div>
       </div>
 
@@ -74,10 +79,10 @@ export default function BuildingPanel({ districtId, buildingId, currentLevel, on
                   <div className={`font-mono text-xs font-semibold truncate ${
                     isUnlocked ? 'text-slate-200' : 'text-slate-600'
                   }`}>
-                    {floor.title}
+                    {LEVEL_LABELS[floor.level]?.title ?? `L${floor.level}`}
                   </div>
                   <div className="font-mono text-[10px] text-slate-500 truncate">
-                    {floor.description}
+                    {floor.know}
                   </div>
                 </div>
                 {isCurrent && (
@@ -88,17 +93,23 @@ export default function BuildingPanel({ districtId, buildingId, currentLevel, on
                 )}
               </div>
 
-              {/* Expanded skills */}
+              {/* Expanded know/assume/learn */}
               {isExpanded && isUnlocked && (
-                <div className="px-3 pb-3 pt-1 border-t border-slate-800">
-                  <ul className="space-y-1">
-                    {floor.skills.map(skill => (
-                      <li key={skill} className="font-mono text-[10px] text-slate-400 flex items-start gap-1.5">
-                        <span className="text-amber-600 mt-0.5">·</span>
-                        <span>{skill}</span>
-                      </li>
-                    ))}
-                  </ul>
+                <div className="px-3 pb-3 pt-1 border-t border-slate-800 space-y-2">
+                  {([
+                    { label: 'know',   value: floor.know },
+                    { label: 'assume', value: floor.assume },
+                    { label: 'learn',  value: floor.learn },
+                  ] as const).map(({ label, value }) => (
+                    <div key={label} className="flex gap-2">
+                      <span className="font-mono text-[9px] text-slate-600 uppercase w-12 shrink-0 mt-0.5">
+                        {label}
+                      </span>
+                      <span className="font-mono text-[10px] text-slate-400 leading-relaxed">
+                        {value}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
