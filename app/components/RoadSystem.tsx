@@ -361,6 +361,38 @@ export function RoadSystem({ nodes, segments, activeLevel }: Props) {
               </mesh>
             )}
 
+            {/*
+              Outer corner fills — a SIDEWALK_W × SIDEWALK_W square patch at each
+              open outer corner, plugging the gap where two bridge strips meet.
+              The W-bridge ends at z = node.z ± ROAD_HALF and the N/S-bridge ends at
+              x = node.x ± ROAD_HALF; neither covers the (±SW_GAP, ±SW_GAP) corner
+              square, producing the visible zigzag notch.  These patches close it.
+            */}
+            {!dirs.west && hasNS && !dirs.north && hasEW && (
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[node.x - SW_GAP, 0.015, node.z - SW_GAP]}>
+                <planeGeometry args={[SIDEWALK_W, SIDEWALK_W]} />
+                <meshLambertMaterial color={SIDEWALK} />
+              </mesh>
+            )}
+            {!dirs.east && hasNS && !dirs.north && hasEW && (
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[node.x + SW_GAP, 0.015, node.z - SW_GAP]}>
+                <planeGeometry args={[SIDEWALK_W, SIDEWALK_W]} />
+                <meshLambertMaterial color={SIDEWALK} />
+              </mesh>
+            )}
+            {!dirs.west && hasNS && !dirs.south && hasEW && (
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[node.x - SW_GAP, 0.015, node.z + SW_GAP]}>
+                <planeGeometry args={[SIDEWALK_W, SIDEWALK_W]} />
+                <meshLambertMaterial color={SIDEWALK} />
+              </mesh>
+            )}
+            {!dirs.east && hasNS && !dirs.south && hasEW && (
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[node.x + SW_GAP, 0.015, node.z + SW_GAP]}>
+                <planeGeometry args={[SIDEWALK_W, SIDEWALK_W]} />
+                <meshLambertMaterial color={SIDEWALK} />
+              </mesh>
+            )}
+
           </group>
         );
       })}
