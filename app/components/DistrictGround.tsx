@@ -16,9 +16,10 @@ interface Props {
   onDistrictClick?: () => void;
   isFocused?: boolean;
   isOtherFocused?: boolean;
+  showLabel?: boolean;
 }
 
-export function DistrictGround({ district, groundColor, accentColor, level, worldBounds, onDistrictClick, isFocused, isOtherFocused }: Props) {
+export function DistrictGround({ district, groundColor, accentColor, level, worldBounds, onDistrictClick, isFocused, isOtherFocused, showLabel = true }: Props) {
   const groupRef = useRef<THREE.Group>(null);
   const opacityRef = useRef(district.appearsAtLevel <= level ? 1 : 0);
   const prevLevelRef = useRef(level);
@@ -76,7 +77,7 @@ export function DistrictGround({ district, groundColor, accentColor, level, worl
         <meshLambertMaterial color={accentColor} transparent opacity={opacityRef.current * 0.35} />
       </mesh>
       {/* District label — visible when unlocked */}
-      {district.appearsAtLevel <= level && (
+      {showLabel && district.appearsAtLevel <= level && (
         <Html
           center
           position={[0, 0.6, 0]}

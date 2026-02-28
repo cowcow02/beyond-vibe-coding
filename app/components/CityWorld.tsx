@@ -193,6 +193,7 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focu
               onDistrictClick={mode === 'city' ? () => onDistrictClick(district.id) : undefined}
               isFocused={focusedDistrictId === district.id}
               isOtherFocused={focusedDistrictId !== null && focusedDistrictId !== district.id}
+              showLabel={mode !== 'building'}
             />
 
             {/* Buildings at their procedurally assigned slots */}
@@ -215,6 +216,7 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focu
                     selectedBuilding?.buildingId === building.id
                   }
                   onBuildingClick={onBuildingClick}
+                  showLabel={mode !== 'building'}
                 />
               );
             })}

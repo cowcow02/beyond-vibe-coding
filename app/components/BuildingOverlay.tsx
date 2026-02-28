@@ -65,6 +65,7 @@ function RotatingBuilding({
           worldZ={0}
           facing="south"
           selectedFloor={selectedFloor ?? undefined}
+          showLabel={false}
         />
       </group>
     </>
@@ -98,8 +99,8 @@ export function BuildingOverlay({ districtId, buildingId, level, onBack }: Props
 
   return (
     <div
-      className="fixed inset-0 z-50 flex"
-      style={{ backdropFilter: 'blur(8px)', background: 'rgba(2,6,23,0.82)' }}
+      className="fixed inset-0 flex"
+      style={{ zIndex: 9999, backdropFilter: 'blur(8px)', background: 'rgba(2,6,23,0.90)' }}
     >
       {/* ── Left: floor list ─────────────────────────────────────────────── */}
       <div className="w-1/2 flex flex-col border-r" style={{ borderColor: 'rgba(51,65,85,0.5)' }}>
@@ -187,12 +188,13 @@ export function BuildingOverlay({ districtId, buildingId, level, onBack }: Props
       </div>
 
       {/* ── Right: 3D building mini-canvas ───────────────────────────────── */}
-      <div className="w-1/2 relative">
+      <div className="w-1/2 relative" style={{ background: '#0a1628', height: '100%' }}>
         <Canvas
+          style={{ width: '100%', height: '100%' }}
           orthographic
           camera={{
             position: [40, 28, 40],
-            zoom: 22,
+            zoom: 30,
             near: 0.1,
             far: 500,
             up: [0, 1, 0],

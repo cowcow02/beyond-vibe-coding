@@ -35,11 +35,12 @@ interface Props {
   worldZ?: number;
   facing?: 'north' | 'south' | 'east' | 'west';
   selectedFloor?: number;
+  showLabel?: boolean;
 }
 
 export function CityBuilding({
   building, district, level, accentColor, districtStyle, isSelected, onBuildingClick,
-  worldX, worldZ, facing, selectedFloor,
+  worldX, worldZ, facing, selectedFloor, showLabel = true,
 }: Props) {
   const [tileX, tileZ] = tileToWorld(
     district.originCol + building.col,
@@ -332,7 +333,7 @@ export function CityBuilding({
       })}
 
       {/* Floating name label */}
-      {numFloors > 0 && (
+      {showLabel && numFloors > 0 && (
         <BuildingLabel
           name={building.name}
           position={[0, numFloors * FLOOR_HEIGHT + 0.5, 0]}
