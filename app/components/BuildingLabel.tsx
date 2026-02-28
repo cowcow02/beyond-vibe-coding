@@ -13,6 +13,7 @@ export function BuildingLabel({ name, position, accentColor }: Props) {
   return (
     <Text
       position={position}
+      font="/fonts/SpaceMono-Regular.woff2"
       fontSize={0.22}
       color="#e2e8f0"
       anchorX="center"
