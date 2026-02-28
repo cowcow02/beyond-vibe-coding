@@ -1,7 +1,7 @@
 // app/components/BuildingLabel.tsx
 'use client';
 
-import { Text } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 
 interface Props {
   name: string;
@@ -11,19 +11,21 @@ interface Props {
 
 export function BuildingLabel({ name, position, accentColor }: Props) {
   return (
-    <Text
+    <Html
       position={position}
-      font="/fonts/SpaceMono-Regular.woff2"
-      fontSize={0.22}
-      color="#e2e8f0"
-      anchorX="center"
-      anchorY="bottom"
-      outlineWidth={0.03}
-      outlineColor="#0f172a"
-      renderOrder={1}
-      depthOffset={-1}
+      center
+      style={{
+        pointerEvents: 'none',
+        userSelect: 'none',
+        whiteSpace: 'nowrap',
+        fontSize: '9px',
+        fontFamily: 'monospace',
+        color: '#e2e8f0',
+        textShadow: '0 0 4px #0f172a, 0 0 8px #0f172a',
+        letterSpacing: '0.05em',
+      }}
     >
       {name}
-    </Text>
+    </Html>
   );
 }

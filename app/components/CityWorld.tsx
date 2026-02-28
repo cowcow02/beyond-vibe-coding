@@ -29,8 +29,13 @@ interface Props {
 export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
   const visibleDistricts = districts.filter(d => d.appearsAtLevel <= level);
 
+  // City spans col 2–22, row 2–18 → world x: 4–44, z: 4–36. Center: (24, 20).
+  // Offset entire city to sit at origin so the camera (which looks at [0,0,0]) sees it correctly.
+  const CITY_OFFSET_X = -24;
+  const CITY_OFFSET_Z = -20;
+
   return (
-    <group>
+    <group position={[CITY_OFFSET_X, 0, CITY_OFFSET_Z]}>
       {/* Global road/asphalt base */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
         <planeGeometry args={[300, 300]} />
