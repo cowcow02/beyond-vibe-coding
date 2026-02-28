@@ -1,15 +1,69 @@
 // app/components/CityWorld.tsx
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
+import { useThree, useFrame } from '@react-three/fiber';
+import type * as THREE from 'three';
 import { districts } from '../data/city';
-import { generateLayout, type GeneratedLayout } from '../lib/cityLayoutGenerator';
+import { generateLayout, type GeneratedLayout, type BlockLayout } from '../lib/cityLayoutGenerator';
 import { DistrictGround } from './DistrictGround';
 import { CityBuilding } from './CityBuilding';
 import { RoadSystem } from './RoadSystem';
 import { CityTraffic } from './CityTraffic';
 import { CityPedestrians } from './CityPedestrians';
 import { CityPark } from './CityPark';
+
+// ─── Auto-zoom to fit all active blocks ───────────────────────────────────────
+
+function AutoZoom({ activeBlocks }: { activeBlocks: BlockLayout[] }) {
+  const { camera, size } = useThree();
+  const targetZoom = useRef((camera as THREE.OrthographicCamera).zoom);
+  const animating   = useRef(false);
+  const animTimer   = useRef(0);
+
+  useEffect(() => {
+    if (activeBlocks.length === 0) return;
+
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (const b of activeBlocks) {
+      minX = Math.min(minX, b.x);
+      maxX = Math.max(maxX, b.x + b.width);
+      minZ = Math.min(minZ, b.z);
+      maxZ = Math.max(maxZ, b.z + b.depth);
+    }
+
+    const spanX = maxX - minX;
+    const spanZ = maxZ - minZ;
+
+    // At 45° isometric azimuth the XZ bounding box projects to:
+    //   screen width  = (spanX + spanZ) / √2
+    //   screen height = (spanX + spanZ) / √6
+    const screenW = (spanX + spanZ) / Math.SQRT2;
+    const screenH = (spanX + spanZ) / Math.sqrt(6);
+
+    const PADDING = 1.35;
+    const zoomW = size.width  / (screenW * PADDING);
+    const zoomH = size.height / (screenH * PADDING);
+    targetZoom.current = Math.min(zoomW, zoomH);
+
+    animating.current = true;
+    animTimer.current = 0;
+  }, [activeBlocks, size]);
+
+  useFrame((_, delta) => {
+    if (!animating.current) return;
+    animTimer.current += delta;
+    if (animTimer.current > 2.5) { animating.current = false; return; }
+
+    const cam = camera as THREE.OrthographicCamera;
+    const diff = targetZoom.current - cam.zoom;
+    if (Math.abs(diff) < 0.05) { animating.current = false; return; }
+    cam.zoom += diff * Math.min(delta * 3.5, 1);
+    cam.updateProjectionMatrix();
+  });
+
+  return null;
+}
 
 const DISTRICT_COLORS: Record<string, { ground: string; accent: string }> = {
   frontend:         { ground: '#1e3a5f', accent: '#60a5fa' },
@@ -72,6 +126,9 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
 
   return (
     <group>  {/* no position offset needed — layout is centered at origin */}
+      {/* Auto-zoom to fit active districts */}
+      <AutoZoom activeBlocks={activeBlocks} />
+
       {/* Global asphalt base — lighter daytime color */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
         <planeGeometry args={[300, 300]} />
