@@ -34,11 +34,12 @@ interface Props {
   worldX?: number;
   worldZ?: number;
   facing?: 'north' | 'south' | 'east' | 'west';
+  selectedFloor?: number;
 }
 
 export function CityBuilding({
   building, district, level, accentColor, districtStyle, isSelected, onBuildingClick,
-  worldX, worldZ, facing,
+  worldX, worldZ, facing, selectedFloor,
 }: Props) {
   const [tileX, tileZ] = tileToWorld(
     district.originCol + building.col,
@@ -246,6 +247,20 @@ export function CityBuilding({
               <mesh position={[0, -fh * 0.25, fd / 2 + 0.012]}>
                 <planeGeometry args={[fw * 0.22, fh * 0.38]} />
                 <meshBasicMaterial color="#0a1020" />
+              </mesh>
+            )}
+
+            {/* Selected-floor amber glow */}
+            {selectedFloor === floorIdx && (
+              <mesh>
+                <boxGeometry args={[fw + 0.14, fh + 0.08, fd + 0.14]} />
+                <meshStandardMaterial
+                  color="#f59e0b"
+                  emissive="#f59e0b"
+                  emissiveIntensity={0.5}
+                  transparent
+                  opacity={0.22}
+                />
               </mesh>
             )}
 
