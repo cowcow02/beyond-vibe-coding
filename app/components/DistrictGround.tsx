@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { type District } from '../data/city';
 import { TILE_SIZE, districtCenter } from '../lib/cityLayout';
@@ -12,9 +13,13 @@ interface Props {
   accentColor: string;
   level: number;
   worldBounds?: { x: number; z: number; width: number; depth: number };
+  onDistrictClick?: () => void;
+  isFocused?: boolean;
+  isOtherFocused?: boolean;
+  showLabel?: boolean;
 }
 
-export function DistrictGround({ district, groundColor, accentColor, level, worldBounds }: Props) {
+export function DistrictGround({ district, groundColor, accentColor, level, worldBounds, onDistrictClick, isFocused, isOtherFocused, showLabel = true }: Props) {
   const groupRef = useRef<THREE.Group>(null);
   const opacityRef = useRef(district.appearsAtLevel <= level ? 1 : 0);
   const prevLevelRef = useRef(level);
@@ -61,8 +66,12 @@ export function DistrictGround({ district, groundColor, accentColor, level, worl
 
   return (
     <group ref={groupRef} position={[cx, 0, cz]}>
-      {/* Ground slab */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      {/* Ground slab — stop propagation when focused so base-ground click-back doesn't fire */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        onClick={(e) => { if (isFocused) e.stopPropagation(); }}
+      >
         <planeGeometry args={[width, depth]} />
         <meshLambertMaterial color={groundColor} transparent opacity={opacityRef.current} />
       </mesh>
@@ -71,6 +80,64 @@ export function DistrictGround({ district, groundColor, accentColor, level, worl
         <planeGeometry args={[width + 0.3, depth + 0.3]} />
         <meshLambertMaterial color={accentColor} transparent opacity={opacityRef.current * 0.35} />
       </mesh>
+      {/* District label — visible when unlocked */}
+      {showLabel && district.appearsAtLevel <= level && (
+        <Html
+          center
+          position={[0, 0.6, 0]}
+          style={{ pointerEvents: onDistrictClick ? 'auto' : 'none' }}
+        >
+          <div
+            onClick={onDistrictClick}
+            style={{
+              cursor: onDistrictClick ? 'pointer' : 'default',
+              opacity: isOtherFocused ? 0.35 : 1,
+              transform: isFocused ? 'scale(1.12)' : 'scale(1)',
+              transition: 'opacity 0.3s, transform 0.3s',
+              textAlign: 'center',
+              userSelect: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            <div style={{
+              background: 'rgba(2,6,23,0.72)',
+              border: `1px solid ${accentColor}55`,
+              borderRadius: '5px',
+              padding: '4px 10px 3px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1px',
+            }}>
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                letterSpacing: '0.1em',
+                color: '#ffffff',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+              }}>
+                <span style={{ color: accentColor, fontSize: '8px' }}>●</span>
+                {district.name.toUpperCase()}
+              </div>
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: '9px',
+                color: 'rgba(180,210,255,0.75)',
+                whiteSpace: 'nowrap',
+              }}>
+                {district.buildings.length} buildings
+              </div>
+            </div>
+          </div>
+        </Html>
+      )}
     </group>
   );
 }

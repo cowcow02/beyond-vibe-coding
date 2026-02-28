@@ -6,14 +6,17 @@ import { LEVEL_LABELS } from '../data/city';
 interface Props {
   level: number;
   onChange: (level: number) => void;
+  className?: string;
 }
 
-export default function LevelSlider({ level, onChange }: Props) {
+export default function LevelSlider({ level, onChange, className }: Props) {
   const { title, tagline } = LEVEL_LABELS[level];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center pb-6 pt-4"
-         style={{ background: 'linear-gradient(to top, rgba(2,6,23,0.95), transparent)' }}>
+    <div
+      className={className ?? 'fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center pb-6 pt-4'}
+      style={{ background: 'linear-gradient(to top, rgba(2,6,23,0.95), transparent)' }}
+    >
       {/* Current level label */}
       <div className="mb-4 text-center">
         <div className="text-amber-300 font-mono text-xs tracking-widest uppercase mb-1">

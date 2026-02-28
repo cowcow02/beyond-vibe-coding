@@ -10,6 +10,10 @@ interface Props {
   level: number;
   onBuildingClick: (districtId: string, buildingId: string) => void;
   selectedBuilding: { districtId: string; buildingId: string } | null;
+  mode: 'city' | 'district' | 'building';
+  focusedDistrictId: string | null;
+  onDistrictClick: (districtId: string) => void;
+  onBackToCity?: () => void;
 }
 
 const CAM_DISTANCE = 80;
@@ -26,7 +30,7 @@ function getIsometricPosition(): [number, number, number] {
   ];
 }
 
-export default function CityScene({ level, onBuildingClick, selectedBuilding }: Props) {
+export default function CityScene({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity }: Props) {
   const camPos = getIsometricPosition();
 
   return (
@@ -68,6 +72,7 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding }: 
       <directionalLight position={[-20, 30, -20]} intensity={0.5} color="#c8e8ff" />
 
       <MapControls
+        makeDefault
         enableRotate={false}
         enablePan={true}
         enableZoom={true}
@@ -83,6 +88,10 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding }: 
         level={level}
         onBuildingClick={onBuildingClick}
         selectedBuilding={selectedBuilding}
+        mode={mode}
+        focusedDistrictId={focusedDistrictId}
+        onDistrictClick={onDistrictClick}
+        onBackToCity={onBackToCity}
       />
     </Canvas>
   );

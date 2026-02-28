@@ -13,59 +13,89 @@ import { CityTraffic } from './CityTraffic';
 import { CityPedestrians } from './CityPedestrians';
 import { CityPark } from './CityPark';
 
-// ─── Auto-zoom to fit all active blocks ───────────────────────────────────────
+// ─── Camera rig: smooth pan + zoom to fit active/focused blocks ───────────────
 
-function AutoZoom({ activeBlocks }: { activeBlocks: BlockLayout[] }) {
-  const { camera, size } = useThree();
-  const targetZoom = useRef((camera as THREE.OrthographicCamera).zoom);
-  const animating   = useRef(false);
-  const animTimer   = useRef(0);
+function CameraRig({
+  activeBlocks,
+  focusedBlock,
+}: {
+  activeBlocks: BlockLayout[];
+  focusedBlock: BlockLayout | undefined;
+}) {
+  const { camera, controls, size } = useThree();
+  const targetZoom = useRef(12);
+  const targetX    = useRef(0);
+  const targetZ    = useRef(0);
+  // dirty=true while animating to target; false once settled → user can pan freely
+  const dirty      = useRef(false);
 
   useEffect(() => {
-    if (activeBlocks.length === 0) return;
-
-    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-    for (const b of activeBlocks) {
-      minX = Math.min(minX, b.x);
-      maxX = Math.max(maxX, b.x + b.width);
-      minZ = Math.min(minZ, b.z);
-      maxZ = Math.max(maxZ, b.z + b.depth);
+    if (focusedBlock) {
+      const cx = focusedBlock.x + focusedBlock.width  / 2;
+      const cz = focusedBlock.z + focusedBlock.depth  / 2;
+      targetX.current = cx;
+      targetZ.current = cz;
+      const spanX = focusedBlock.width  + 6;
+      const spanZ = focusedBlock.depth  + 6;
+      const screenW = (spanX + spanZ) / Math.SQRT2;
+      const screenH = (spanX + spanZ) / Math.sqrt(6);
+      const PADDING = 1.6;
+      targetZoom.current = Math.min(
+        size.width  / (screenW * PADDING),
+        size.height / (screenH * PADDING),
+      );
+    } else if (activeBlocks.length > 0) {
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      for (const b of activeBlocks) {
+        minX = Math.min(minX, b.x);
+        maxX = Math.max(maxX, b.x + b.width);
+        minZ = Math.min(minZ, b.z);
+        maxZ = Math.max(maxZ, b.z + b.depth);
+      }
+      targetX.current = (minX + maxX) / 2;
+      targetZ.current = (minZ + maxZ) / 2;
+      const spanX = maxX - minX;
+      const spanZ = maxZ - minZ;
+      const screenW = (spanX + spanZ) / Math.SQRT2;
+      const screenH = (spanX + spanZ) / Math.sqrt(6);
+      const PADDING = 1.35;
+      targetZoom.current = Math.min(
+        size.width  / (screenW * PADDING),
+        size.height / (screenH * PADDING),
+      );
     }
-
-    const spanX = maxX - minX;
-    const spanZ = maxZ - minZ;
-
-    // At 45° isometric azimuth the XZ bounding box projects to:
-    //   screen width  = (spanX + spanZ) / √2
-    //   screen height = (spanX + spanZ) / √6
-    const screenW = (spanX + spanZ) / Math.SQRT2;
-    const screenH = (spanX + spanZ) / Math.sqrt(6);
-
-    const PADDING = 1.35;
-    const zoomW = size.width  / (screenW * PADDING);
-    const zoomH = size.height / (screenH * PADDING);
-    targetZoom.current = Math.min(zoomW, zoomH);
-
-    animating.current = true;
-    animTimer.current = 0;
-  }, [activeBlocks, size]);
+    dirty.current = true;
+  }, [activeBlocks, focusedBlock, size]);
 
   useFrame((_, delta) => {
-    if (!animating.current) return;
-    animTimer.current += delta;
-    if (animTimer.current > 2.5) { animating.current = false; return; }
+    // Once settled, stop animating so the user can pan/zoom freely
+    if (!dirty.current) return;
 
-    const cam = camera as THREE.OrthographicCamera;
-    const diff = targetZoom.current - cam.zoom;
-    if (Math.abs(diff) < 0.05) { animating.current = false; return; }
-    cam.zoom += diff * Math.min(delta * 3.5, 1);
+    const cam  = camera as THREE.OrthographicCamera;
+    const ctrl = controls as unknown as { target: THREE.Vector3 } | null;
+    if (!ctrl?.target) return;
+
+    const dx = (targetX.current - ctrl.target.x) * Math.min(delta * 4, 1);
+    const dz = (targetZ.current - ctrl.target.z) * Math.min(delta * 4, 1);
+    ctrl.target.x  += dx;
+    ctrl.target.z  += dz;
+    cam.position.x += dx;
+    cam.position.z += dz;
+
+    const zDiff = targetZoom.current - cam.zoom;
+    cam.zoom += zDiff * Math.min(delta * 3.5, 1);
     cam.updateProjectionMatrix();
+
+    // Mark settled when close enough
+    const panDist  = Math.abs(targetX.current - ctrl.target.x) + Math.abs(targetZ.current - ctrl.target.z);
+    const zoomDist = Math.abs(targetZoom.current - cam.zoom);
+    if (panDist < 0.05 && zoomDist < 0.1) dirty.current = false;
   });
 
   return null;
 }
 
-const DISTRICT_COLORS: Record<string, { ground: string; accent: string }> = {
+export const DISTRICT_COLORS: Record<string, { ground: string; accent: string }> = {
   frontend:         { ground: '#1e3a5f', accent: '#60a5fa' },
   backend:          { ground: '#064e3b', accent: '#34d399' },
   databases:        { ground: '#2e1065', accent: '#a78bfa' },
@@ -87,7 +117,7 @@ export interface DistrictStyle {
   lobbyDark: number;
 }
 
-const DISTRICT_STYLES: Record<string, DistrictStyle> = {
+export const DISTRICT_STYLES: Record<string, DistrictStyle> = {
   frontend:         { rooftop: 'antenna',    windowRows: 3, windowCols: 3, bodyDark: 0.25, lobbyDark: 0.15 },
   backend:          { rooftop: 'watertower', windowRows: 2, windowCols: 2, bodyDark: 0.35, lobbyDark: 0.20 },
   databases:        { rooftop: 'ac',         windowRows: 2, windowCols: 3, bodyDark: 0.30, lobbyDark: 0.18 },
@@ -103,9 +133,13 @@ interface Props {
   level: number;
   onBuildingClick: (districtId: string, buildingId: string) => void;
   selectedBuilding: { districtId: string; buildingId: string } | null;
+  mode: 'city' | 'district' | 'building';
+  focusedDistrictId: string | null;
+  onDistrictClick: (districtId: string) => void;
+  onBackToCity?: () => void;
 }
 
-export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
+export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity }: Props) {
   // Computed once on mount; Date.now() seed inside generates a unique layout each page load.
   const layout: GeneratedLayout = useMemo(() => generateLayout(districts), []);
 
@@ -124,13 +158,25 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
     [layout.blocks, level]
   );
 
+  const focusedBlock = useMemo(
+    () => focusedDistrictId
+      ? layout.blocks.find(b => b.districtId === focusedDistrictId)
+      : undefined,
+    [layout.blocks, focusedDistrictId],
+  );
+
   return (
     <group>  {/* no position offset needed — layout is centered at origin */}
-      {/* Auto-zoom to fit active districts */}
-      <AutoZoom activeBlocks={activeBlocks} />
+      {/* Camera rig — smooth pan + zoom to fit active/focused blocks */}
+      <CameraRig activeBlocks={activeBlocks} focusedBlock={focusedBlock} />
 
-      {/* Ground base — warm milky stone */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
+      {/* Ground base — warm milky stone. Click outside district to go back to city. */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.05, 0]}
+        receiveShadow
+        onClick={() => { if (mode === 'district') onBackToCity?.(); }}
+      >
         <planeGeometry args={[300, 300]} />
         <meshLambertMaterial color="#c2b9ad" />
       </mesh>
@@ -161,6 +207,10 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
               accentColor={colors.accent}
               level={level}
               worldBounds={block ? { x: block.x, z: block.z, width: block.width, depth: block.depth } : undefined}
+              onDistrictClick={mode === 'city' ? () => onDistrictClick(district.id) : undefined}
+              isFocused={focusedDistrictId === district.id}
+              isOtherFocused={focusedDistrictId !== null && focusedDistrictId !== district.id}
+              showLabel={mode !== 'building'}
             />
 
             {/* Buildings at their procedurally assigned slots */}
@@ -183,6 +233,7 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
                     selectedBuilding?.buildingId === building.id
                   }
                   onBuildingClick={onBuildingClick}
+                  showLabel={mode !== 'building'}
                 />
               );
             })}
