@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { type Building, type District } from '../data/city';
 import { tileToWorld, TILE_SIZE, FLOOR_HEIGHT } from '../lib/cityLayout';
+import { BuildingLabel } from './BuildingLabel';
 
 const FLOOR_W = TILE_SIZE * 0.82;
 const FLOOR_D = TILE_SIZE * 0.82;
@@ -104,7 +105,7 @@ export function CityBuilding({
 
   const accent    = new THREE.Color(accentColor);
   const bodyHex   = '#' + accent.clone().multiplyScalar(0.3).getHexString();
-  const windowHex = '#' + accent.clone().multiplyScalar(1.5).clampLength(0, 1).getHexString();
+  const windowHex = '#' + accent.clone().multiplyScalar(1.5).getHexString();
 
   return (
     <group
@@ -183,6 +184,15 @@ export function CityBuilding({
           </group>
         );
       })}
+
+      {/* Floating name label */}
+      {numFloors > 0 && (
+        <BuildingLabel
+          name={building.name}
+          position={[0, numFloors * FLOOR_HEIGHT + 0.4, 0]}
+          accentColor={accentColor}
+        />
+      )}
     </group>
   );
 }
