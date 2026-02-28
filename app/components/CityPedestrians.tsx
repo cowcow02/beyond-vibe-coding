@@ -83,7 +83,7 @@ export function CityPedestrians({ blocks }: Props) {
         maxZ: area.zMax,
       };
     });
-  }, []);
+  }, [blocks]);
 
   useFrame(({ clock }, delta) => {
     const time = clock.elapsedTime;

@@ -61,6 +61,15 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
     [layout.segments, level]
   );
 
+  // Blocks whose districts have unlocked at this level
+  const activeBlocks = useMemo(
+    () => layout.blocks.filter(b => {
+      const d = districts.find(d => d.id === b.districtId);
+      return d && d.appearsAtLevel <= level;
+    }),
+    [layout.blocks, level]
+  );
+
   return (
     <group>  {/* no position offset needed — layout is centered at origin */}
       {/* Global asphalt base — lighter daytime color */}
@@ -76,8 +85,8 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
         activeLevel={level}
       />
 
-      {/* Parks & gardens */}
-      <CityPark blocks={layout.blocks} />
+      {/* Parks & gardens — only for unlocked districts */}
+      <CityPark blocks={activeBlocks} />
 
       {/* District grounds + buildings */}
       {districts.map(district => {
@@ -127,8 +136,8 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
       {/* Traffic */}
       <CityTraffic segments={activeSegments} />
 
-      {/* Pedestrians */}
-      <CityPedestrians blocks={layout.blocks} />
+      {/* Pedestrians — only on sidewalks of unlocked districts */}
+      <CityPedestrians blocks={activeBlocks} />
     </group>
   );
 }
