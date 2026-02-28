@@ -4,6 +4,7 @@
 import { Canvas } from '@react-three/fiber';
 import { MapControls } from '@react-three/drei';
 import { CityWorld } from './CityWorld';
+import { SkyDome } from './SkyDome';
 
 interface Props {
   level: number;
@@ -31,7 +32,6 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding }: 
   return (
     <Canvas
       className="fixed inset-0 w-full h-full"
-      style={{ background: '#0f172a' }}
       orthographic
       camera={{
         position: camPos,
@@ -42,12 +42,17 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding }: 
       }}
       shadows
     >
-      <fog attach="fog" args={['#0f172a', 80, 200]} />
-      <ambientLight intensity={0.6} color="#c8d8ff" />
+      {/* Daytime fog — light blue haze at horizon */}
+      <fog attach="fog" args={['#a8d4f0', 100, 260]} />
+
+      {/* Bright daytime ambient */}
+      <ambientLight intensity={1.1} color="#d8eaff" />
+
+      {/* Main sun — warm white from upper right */}
       <directionalLight
-        position={[20, 40, 20]}
-        intensity={1.2}
-        color="#fff8e7"
+        position={[30, 60, 20]}
+        intensity={2.0}
+        color="#fff5e0"
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-80}
@@ -55,7 +60,9 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding }: 
         shadow-camera-top={80}
         shadow-camera-bottom={-80}
       />
-      <directionalLight position={[-10, 20, -10]} intensity={0.3} color="#a0c4ff" />
+
+      {/* Sky bounce fill — cool blue from left */}
+      <directionalLight position={[-20, 30, -20]} intensity={0.5} color="#c8e8ff" />
 
       <MapControls
         enableRotate={false}
@@ -66,6 +73,8 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding }: 
         panSpeed={1.5}
         zoomSpeed={1.2}
       />
+
+      <SkyDome />
 
       <CityWorld
         level={level}
