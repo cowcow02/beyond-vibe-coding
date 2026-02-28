@@ -19,6 +19,15 @@ export default function Home() {
     buildingId: string;
   } | null>(null);
 
+  // Level change — resets to city view when in district mode
+  const handleLevelChange = useCallback((newLevel: number) => {
+    setLevel(newLevel);
+    if (mode === 'district') {
+      setMode('city');
+      setFocusedDistrict(null);
+    }
+  }, [mode]);
+
   // City → District
   const handleDistrictClick = useCallback((districtId: string) => {
     setFocusedDistrict(districtId);
@@ -94,7 +103,7 @@ export default function Home() {
       )}
 
       {/* Level slider — hidden when building overlay owns it */}
-      {mode !== 'building' && <LevelSlider level={level} onChange={setLevel} />}
+      {mode !== 'building' && <LevelSlider level={level} onChange={handleLevelChange} />}
     </main>
   );
 }
