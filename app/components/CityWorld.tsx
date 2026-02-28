@@ -61,11 +61,11 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
         <meshLambertMaterial color="#2a3f52" />
       </mesh>
 
-      {/* Road system */}
-      <RoadSystem />
+      {/* Road system — TODO Task 7: pass layout.nodes, layout.segments, activeLevel */}
+      <RoadSystem nodes={[]} segments={[]} activeLevel={level} />
 
-      {/* Parks & gardens */}
-      <CityPark />
+      {/* Parks & gardens — TODO Task 7: pass layout.blocks */}
+      <CityPark blocks={[]} />
 
       {/* District grounds + buildings */}
       {districts.map(district => {
@@ -101,11 +101,11 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
         );
       })}
 
-      {/* Traffic */}
-      <CityTraffic />
+      {/* Traffic — TODO Task 7: pass activeSegments */}
+      <CityTraffic segments={[]} />
 
-      {/* Pedestrians */}
-      <CityPedestrians />
+      {/* Pedestrians — TODO Task 7: pass layout.blocks */}
+      <CityPedestrians blocks={[]} />
     </group>
   );
 }

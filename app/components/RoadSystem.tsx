@@ -1,79 +1,90 @@
 // app/components/RoadSystem.tsx
 'use client';
 
-import * as THREE from 'three';
+// Types imported from the layout generator.
+// If cityLayoutGenerator.ts doesn't exist yet (parallel task),
+// we define them inline so TypeScript compiles cleanly.
+// Once Task 1 is committed these can be replaced with:
+//   import type { RoadNode, GeneratedSegment } from '../lib/cityLayoutGenerator';
+export interface RoadNode {
+  id: string;
+  x: number;
+  z: number;
+}
 
-// ── Road segment definitions ──────────────────────────────────────────────
-// All coordinates in raw world space (inside CityWorld group offset).
-// Used by CityTraffic.tsx for car paths.
+export interface GeneratedSegment {
+  id: string;
+  x1: number; z1: number;
+  x2: number; z2: number;
+  axis: 'x' | 'z';
+  level: number;
+}
+
+// RoadSegment is kept for CityTraffic compatibility (it mirrors GeneratedSegment).
 export interface RoadSegment {
   id: string;
   x1: number; z1: number;
   x2: number; z2: number;
   axis: 'x' | 'z';
+  level: number;
 }
 
-export const ROAD_SEGMENTS: RoadSegment[] = [
-  { id: 'ns-24', x1: 24, z1: 2,  x2: 24, z2: 44, axis: 'z' },
-  { id: 'ns-40', x1: 40, z1: 2,  x2: 40, z2: 28, axis: 'z' },
-  { id: 'ns-32', x1: 32, z1: 30, x2: 32, z2: 44, axis: 'z' },
-  { id: 'ew-16', x1: 4,  z1: 16, x2: 52, z2: 16, axis: 'x' },
-  { id: 'ew-30', x1: 4,  z1: 30, x2: 44, z2: 30, axis: 'x' },
-];
+interface Props {
+  nodes: RoadNode[];
+  segments: GeneratedSegment[];
+  activeLevel: number;
+}
 
-// Intersections for crosswalks
-const INTERSECTIONS = [
-  { x: 24, z: 16 },
-  { x: 40, z: 16 },
-  { x: 24, z: 30 },
-  { x: 32, z: 30 },
-];
-
-const ASPHALT   = '#1e2d3d';
-const SIDEWALK  = '#2d3f50';
-const DASH_COL  = '#c8a020';
+const ASPHALT  = '#1e2d3d';
+const SIDEWALK = '#2d3f50';
+const DASH_COL = '#c8a020';
 const CROSS_COL = '#dde4ec';
 
-const ROAD_W = 2.5;
+const ROAD_W     = 2.5;
 const SIDEWALK_W = 0.4;
 
-// N-S roads: each entry defines the road centerline x and z extent
-interface NSRoad {
-  id: string;
-  x: number;
-  z1: number;
-  z2: number;
-  intersectionZs: number[];
-}
+export function RoadSystem({ nodes, segments, activeLevel }: Props) {
+  // ── Filter to only segments visible at this level ──────────────────────────
+  const activeSegs = segments.filter(s => s.level <= activeLevel);
 
-const NS_ROADS: NSRoad[] = [
-  { id: 'ns-24', x: 24, z1: 2,  z2: 44, intersectionZs: [16, 30] },
-  { id: 'ns-40', x: 40, z1: 2,  z2: 28, intersectionZs: [16] },
-  { id: 'ns-32', x: 32, z1: 30, z2: 44, intersectionZs: [30] },
-];
+  // ── Determine which nodes are active (touched by at least one active seg) ──
+  const activeNodeIds = new Set(
+    activeSegs.flatMap(s =>
+      nodes
+        .filter(n => (n.x === s.x1 && n.z === s.z1) || (n.x === s.x2 && n.z === s.z2))
+        .map(n => n.id)
+    )
+  );
+  const activeNodes = nodes.filter(n => activeNodeIds.has(n.id));
 
-// E-W roads: each entry defines the road centerline z and x extent
-interface EWRoad {
-  id: string;
-  z: number;
-  x1: number;
-  x2: number;
-  intersectionXs: number[];
-}
+  // ── Determine intersection nodes (≥ 3 active segments connect) ─────────────
+  const nodeDegree = new Map<string, number>();
+  for (const node of activeNodes) {
+    const degree = activeSegs.filter(
+      s => (s.x1 === node.x && s.z1 === node.z) || (s.x2 === node.x && s.z2 === node.z)
+    ).length;
+    nodeDegree.set(node.id, degree);
+  }
+  const intersectionNodes = activeNodes.filter(n => (nodeDegree.get(n.id) ?? 0) >= 3);
 
-const EW_ROADS: EWRoad[] = [
-  { id: 'ew-16', z: 16, x1: 4,  x2: 52, intersectionXs: [24, 40] },
-  { id: 'ew-30', z: 30, x1: 4,  x2: 44, intersectionXs: [24, 32] },
-];
+  // ── Split active segments by axis for geometry rendering ──────────────────
+  const zAxisSegs = activeSegs.filter(s => s.axis === 'z'); // N-S roads
+  const xAxisSegs = activeSegs.filter(s => s.axis === 'x'); // E-W roads
 
-export function RoadSystem() {
   return (
     <group>
-      {/* ── N-S roads ── */}
-      {NS_ROADS.map(({ id, x, z1, z2, intersectionZs }) => {
-        const length = z2 - z1;
+      {/* ── N-S roads (axis === 'z') ── */}
+      {zAxisSegs.map(seg => {
+        const { id, x1: x, z1, z2 } = seg;
+        const length = Math.abs(z2 - z1);
+        const zMin = Math.min(z1, z2);
         const centerZ = (z1 + z2) / 2;
         const dashCount = Math.floor(length / 2);
+
+        // Collect intersection Z values along this segment's X
+        const intersectionZs = intersectionNodes
+          .filter(n => n.x === x && n.z > zMin && n.z < zMin + length)
+          .map(n => n.z);
 
         return (
           <group key={id}>
@@ -94,7 +105,7 @@ export function RoadSystem() {
             </mesh>
             {/* Center lane dashes — skip near intersections */}
             {Array.from({ length: dashCount }, (_, i) => {
-              const z = z1 + 1.0 + i * 2.0;
+              const z = zMin + 1.0 + i * 2.0;
               const nearIntersection = intersectionZs.some(iz => Math.abs(z - iz) < 1.5);
               if (nearIntersection) return null;
               return (
@@ -108,11 +119,18 @@ export function RoadSystem() {
         );
       })}
 
-      {/* ── E-W roads ── */}
-      {EW_ROADS.map(({ id, z, x1, x2, intersectionXs }) => {
-        const length = x2 - x1;
+      {/* ── E-W roads (axis === 'x') ── */}
+      {xAxisSegs.map(seg => {
+        const { id, x1, x2, z1: z } = seg;
+        const length = Math.abs(x2 - x1);
+        const xMin = Math.min(x1, x2);
         const centerX = (x1 + x2) / 2;
         const dashCount = Math.floor(length / 2);
+
+        // Collect intersection X values along this segment's Z
+        const intersectionXs = intersectionNodes
+          .filter(n => n.z === z && n.x > xMin && n.x < xMin + length)
+          .map(n => n.x);
 
         return (
           <group key={id}>
@@ -133,7 +151,7 @@ export function RoadSystem() {
             </mesh>
             {/* Center lane dashes — skip near intersections */}
             {Array.from({ length: dashCount }, (_, i) => {
-              const x = x1 + 1.0 + i * 2.0;
+              const x = xMin + 1.0 + i * 2.0;
               const nearIntersection = intersectionXs.some(ix => Math.abs(x - ix) < 1.5);
               if (nearIntersection) return null;
               return (
@@ -147,30 +165,42 @@ export function RoadSystem() {
         );
       })}
 
-      {/* ── Crosswalk stripes at each intersection ── */}
-      {INTERSECTIONS.map(({ x, z }) => (
-        <group key={`cross-${x}-${z}`}>
+      {/* ── Corner fill patch at every active node ── */}
+      {activeNodes.map(node => (
+        <mesh
+          key={`corner-${node.id}`}
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[node.x, 0.001, node.z]}
+        >
+          <planeGeometry args={[ROAD_W, ROAD_W]} />
+          <meshLambertMaterial color={ASPHALT} />
+        </mesh>
+      ))}
+
+      {/* ── Crosswalk stripes at intersection nodes (≥ 3 segments) ── */}
+      {intersectionNodes.map(node => (
+        <group key={`cross-${node.id}`}>
           {Array.from({ length: 5 }, (_, i) => {
             const offset = -1.0 + i * 0.5;
             return (
               <group key={i}>
                 {/* Crosses the N-S road — stripes on the northern side */}
-                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[x + offset, 0.025, z - 1.8]}>
+                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[node.x + offset, 0.025, node.z - 1.8]}>
                   <planeGeometry args={[0.32, 0.7]} />
                   <meshBasicMaterial color={CROSS_COL} />
                 </mesh>
                 {/* Crosses the N-S road — stripes on the southern side */}
-                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[x + offset, 0.025, z + 1.8]}>
+                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[node.x + offset, 0.025, node.z + 1.8]}>
                   <planeGeometry args={[0.32, 0.7]} />
                   <meshBasicMaterial color={CROSS_COL} />
                 </mesh>
                 {/* Crosses the E-W road — stripes on the western side */}
-                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[x - 1.8, 0.025, z + offset]}>
+                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[node.x - 1.8, 0.025, node.z + offset]}>
                   <planeGeometry args={[0.7, 0.32]} />
                   <meshBasicMaterial color={CROSS_COL} />
                 </mesh>
                 {/* Crosses the E-W road — stripes on the eastern side */}
-                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[x + 1.8, 0.025, z + offset]}>
+                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[node.x + 1.8, 0.025, node.z + offset]}>
                   <planeGeometry args={[0.7, 0.32]} />
                   <meshBasicMaterial color={CROSS_COL} />
                 </mesh>
