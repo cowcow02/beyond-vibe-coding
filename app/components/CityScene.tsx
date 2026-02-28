@@ -42,8 +42,11 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding }: 
       }}
       shadows
     >
-      {/* Daytime fog — light blue haze at horizon */}
-      <fog attach="fog" args={['#a8d4f0', 100, 260]} />
+      {/* Sky blue scene background */}
+      <color attach="background" args={['#6ab4e8']} />
+
+      {/* Daytime fog — light sky blue, fades city edges into sky */}
+      <fog attach="fog" args={['#a8d4f0', 80, 220]} />
 
       {/* Bright daytime ambient */}
       <ambientLight intensity={1.1} color="#d8eaff" />
