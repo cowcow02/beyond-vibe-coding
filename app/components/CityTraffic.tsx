@@ -4,7 +4,23 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { ROAD_SEGMENTS, type RoadSegment } from './RoadSystem';
+
+// Inline type until cityLayoutGenerator.ts is committed (Task 1)
+// Once available, replace with: import type { GeneratedSegment } from '../lib/cityLayoutGenerator';
+interface GeneratedSegment {
+  id: string;
+  x1: number; z1: number;
+  x2: number; z2: number;
+  axis: 'x' | 'z';
+  level: number;
+}
+
+// RoadSegment alias kept for internal helper functions
+type RoadSegment = GeneratedSegment;
+
+interface Props {
+  segments: GeneratedSegment[];
+}
 
 interface CarState {
   segIdx: number;     // index into ROAD_SEGMENTS
@@ -48,13 +64,13 @@ function segRotY(seg: RoadSegment, dir: 1 | -1): number {
   return dir === 1 ? -Math.PI / 2 : Math.PI / 2;
 }
 
-export function CityTraffic() {
+export function CityTraffic({ segments }: Props) {
   const carRefs = useRef<(THREE.Group | null)[]>([]);
 
   const cars = useMemo<CarState[]>(() => {
     return Array.from({ length: 15 }, (_, i) => {
       const isPark = i < 4;
-      const segIdx = isPark ? i % ROAD_SEGMENTS.length : Math.floor(Math.random() * ROAD_SEGMENTS.length);
+      const segIdx = isPark ? i % segments.length : Math.floor(Math.random() * segments.length);
       return {
         segIdx,
         t: isPark ? 0 : Math.random(),
@@ -75,7 +91,7 @@ export function CityTraffic() {
       const mesh = carRefs.current[i];
       if (!mesh) return;
 
-      const seg = ROAD_SEGMENTS[car.segIdx];
+      const seg = segments[car.segIdx];
       const len = segLength(seg);
 
       if (car.parkMode) {
@@ -137,7 +153,7 @@ export function CityTraffic() {
   return (
     <group>
       {cars.map((car, i) => {
-        const seg = ROAD_SEGMENTS[car.segIdx];
+        const seg = segments[car.segIdx];
         const [ix, iy, iz] = segPos(seg, car.t, car.laneOff);
         const color = CAR_COLORS[i % CAR_COLORS.length];
 

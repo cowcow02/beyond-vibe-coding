@@ -5,6 +5,22 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
+// Inline type until cityLayoutGenerator.ts is committed (Task 1)
+// Once available, replace with: import type { BlockLayout } from '../lib/cityLayoutGenerator';
+interface BlockLayout {
+  districtId: string;
+  x: number; z: number;
+  width: number; depth: number;
+  roadEdges: ('north' | 'south' | 'east' | 'west')[];
+  buildingSlots: unknown[];
+  parkX: number; parkZ: number;
+  parkWidth: number; parkDepth: number;
+}
+
+interface Props {
+  blocks: BlockLayout[];
+}
+
 interface PedState {
   x: number; z: number;
   tx: number; tz: number;      // walk target
@@ -22,35 +38,6 @@ interface PedState {
   minZ: number; maxZ: number;
 }
 
-// District sidewalk areas (raw world coords, inside city group)
-const SIDEWALK_AREAS = [
-  // frontend — top edge sidewalk
-  { minX: 6,  maxX: 22, minZ: 3.2,  maxZ: 3.8,  entr: [12, 4]  },
-  // frontend — bottom edge sidewalk
-  { minX: 6,  maxX: 22, minZ: 14.2, maxZ: 14.8, entr: [14, 14] },
-  // backend — top edge
-  { minX: 26, maxX: 38, minZ: 3.2,  maxZ: 3.8,  entr: [32, 4]  },
-  // backend — bottom edge
-  { minX: 26, maxX: 38, minZ: 14.2, maxZ: 14.8, entr: [30, 14] },
-  // system-design — left sidewalk (N-S road B side)
-  { minX: 41.2, maxX: 41.8, minZ: 4, maxZ: 12,  entr: [42, 8]  },
-  // databases — top edge
-  { minX: 4,  maxX: 18, minZ: 17.2, maxZ: 17.8, entr: [10, 18] },
-  // databases — bottom edge
-  { minX: 4,  maxX: 18, minZ: 28.2, maxZ: 28.8, entr: [8,  28] },
-  // devops — top edge
-  { minX: 26, maxX: 38, minZ: 17.2, maxZ: 17.8, entr: [32, 18] },
-  // devops — bottom edge
-  { minX: 26, maxX: 38, minZ: 28.2, maxZ: 28.8, entr: [30, 28] },
-  // performance — left edge
-  { minX: 41.2, maxX: 41.8, minZ: 18, maxZ: 26, entr: [42, 22] },
-  // testing — top edge
-  { minX: 4,  maxX: 16, minZ: 31.2, maxZ: 31.8, entr: [8,  32] },
-  // security — top edge
-  { minX: 20, maxX: 30, minZ: 29.2, maxZ: 29.8, entr: [25, 30] },
-  // leadership — top edge
-  { minX: 34, maxX: 48, minZ: 35.2, maxZ: 35.8, entr: [40, 36] },
-];
 
 // Muted accent colors per district
 const PED_COLORS = [
@@ -58,16 +45,34 @@ const PED_COLORS = [
   '#c04060', '#c04040', '#2870b0', '#c08030', '#a040c0',
 ];
 
-export function CityPedestrians() {
+export function CityPedestrians({ blocks }: Props) {
   const bodyRefs  = useRef<(THREE.Mesh | null)[]>([]);
   const headRefs  = useRef<(THREE.Mesh | null)[]>([]);
   const groupRefs = useRef<(THREE.Group | null)[]>([]);
 
+  // Build sidewalk areas from block road-facing edges
+  const sidewalkAreas = blocks.flatMap(block => {
+    const areas: { xMin: number; xMax: number; zMin: number; zMax: number; entr: [number, number] }[] = [];
+    const sw = 1.5; // sidewalk strip half-width
+    if (block.roadEdges.includes('north'))
+      areas.push({ xMin: block.x, xMax: block.x + block.width, zMin: block.z - sw, zMax: block.z + sw, entr: [block.x + block.width / 2, block.z] });
+    if (block.roadEdges.includes('south'))
+      areas.push({ xMin: block.x, xMax: block.x + block.width, zMin: block.z + block.depth - sw, zMax: block.z + block.depth + sw, entr: [block.x + block.width / 2, block.z + block.depth] });
+    if (block.roadEdges.includes('west'))
+      areas.push({ xMin: block.x - sw, xMax: block.x + sw, zMin: block.z, zMax: block.z + block.depth, entr: [block.x, block.z + block.depth / 2] });
+    if (block.roadEdges.includes('east'))
+      areas.push({ xMin: block.x + block.width - sw, xMax: block.x + block.width + sw, zMin: block.z, zMax: block.z + block.depth, entr: [block.x + block.width, block.z + block.depth / 2] });
+    return areas;
+  });
+
+  // Fallback: if no blocks provided yet, use an empty area to avoid crashes
+  const areas = sidewalkAreas.length > 0 ? sidewalkAreas : [{ xMin: 0, xMax: 1, zMin: 0, zMax: 1, entr: [0.5, 0.5] as [number, number] }];
+
   const peds = useMemo<PedState[]>(() => {
     return Array.from({ length: 24 }, (_, i) => {
-      const area = SIDEWALK_AREAS[i % SIDEWALK_AREAS.length];
-      const x = area.minX + Math.random() * (area.maxX - area.minX);
-      const z = area.minZ + Math.random() * (area.maxZ - area.minZ);
+      const area = areas[i % areas.length];
+      const x = area.xMin + Math.random() * (area.xMax - area.xMin);
+      const z = area.zMin + Math.random() * (area.zMax - area.zMin);
       const isVisitor = i % 3 === 0; // every 3rd ped is a visitor
       return {
         x, z,
@@ -80,12 +85,12 @@ export function CityPedestrians() {
         insideDuration: 2 + Math.random() * 6,
         bobPhase: Math.random() * Math.PI * 2,
         isVisitor,
-        entrX: (area.entr as number[])[0],
-        entrZ: (area.entr as number[])[1],
-        minX: area.minX + 0.5,
-        maxX: area.maxX - 0.5,
-        minZ: area.minZ,
-        maxZ: area.maxZ,
+        entrX: area.entr[0],
+        entrZ: area.entr[1],
+        minX: area.xMin + 0.5,
+        maxX: area.xMax - 0.5,
+        minZ: area.zMin,
+        maxZ: area.zMax,
       };
     });
   }, []);
