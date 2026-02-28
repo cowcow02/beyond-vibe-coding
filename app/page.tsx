@@ -92,8 +92,10 @@ export default function Home() {
         />
       )}
 
-      {/* Level slider — always visible */}
-      <LevelSlider level={level} onChange={setLevel} />
+      {/* Level slider — always visible, above overlay in building mode */}
+      <div style={{ position: 'relative', zIndex: mode === 'building' ? 10000 : undefined }}>
+        <LevelSlider level={level} onChange={setLevel} />
+      </div>
     </main>
   );
 }
