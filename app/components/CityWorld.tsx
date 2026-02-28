@@ -111,6 +111,13 @@ export const DISTRICT_COLORS: Record<string, { ground: string; accent: string }>
   'system-design':  { ground: '#0c4a6e', accent: '#38bdf8' },
   performance:      { ground: '#451a03', accent: '#fbbf24' },
   leadership:       { ground: '#3b0764', accent: '#e879f9' },
+  'backend-basics':   { ground: '#064e3b', accent: '#34d399' },
+  'data-layer':       { ground: '#2e1065', accent: '#a78bfa' },
+  'developer-craft':  { ground: '#1a2e1a', accent: '#86efac' },
+  'backend-patterns': { ground: '#1c1a3a', accent: '#818cf8' },
+  'devops-cloud':     { ground: '#431407', accent: '#fb923c' },
+  'backend-arch':     { ground: '#1c1219', accent: '#f0abfc' },
+  'backend-architecture': { ground: '#1c1219', accent: '#f0abfc' },
 };
 
 type RooftopStyle = 'antenna' | 'watertower' | 'ac' | 'satellite' | 'spire';
@@ -133,6 +140,13 @@ export const DISTRICT_STYLES: Record<string, DistrictStyle> = {
   'system-design':  { rooftop: 'antenna',    windowRows: 3, windowCols: 3, bodyDark: 0.26, lobbyDark: 0.15 },
   performance:      { rooftop: 'spire',      windowRows: 2, windowCols: 3, bodyDark: 0.22, lobbyDark: 0.13 },
   leadership:       { rooftop: 'watertower', windowRows: 3, windowCols: 3, bodyDark: 0.24, lobbyDark: 0.14 },
+  'backend-basics':       { rooftop: 'watertower', windowRows: 2, windowCols: 2, bodyDark: 0.35, lobbyDark: 0.20 },
+  'data-layer':           { rooftop: 'ac',         windowRows: 2, windowCols: 3, bodyDark: 0.30, lobbyDark: 0.18 },
+  'developer-craft':      { rooftop: 'satellite',  windowRows: 2, windowCols: 2, bodyDark: 0.28, lobbyDark: 0.16 },
+  'backend-patterns':     { rooftop: 'antenna',    windowRows: 2, windowCols: 3, bodyDark: 0.32, lobbyDark: 0.19 },
+  'devops-cloud':         { rooftop: 'ac',         windowRows: 2, windowCols: 2, bodyDark: 0.38, lobbyDark: 0.22 },
+  'backend-arch':         { rooftop: 'watertower', windowRows: 1, windowCols: 2, bodyDark: 0.40, lobbyDark: 0.25 },
+  'backend-architecture': { rooftop: 'watertower', windowRows: 1, windowCols: 2, bodyDark: 0.40, lobbyDark: 0.25 },
 };
 
 interface Props {
@@ -223,6 +237,9 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focu
             {isVisible && block?.buildingSlots.map(slot => {
               const building = district.buildings.find(b => b.id === slot.buildingId);
               if (!building) return null;
+              // Building can appear later than its district
+              const buildingVisible = level >= (building.appearsAtLevel ?? district.appearsAtLevel);
+              if (!buildingVisible) return null;
               return (
                 <CityBuilding
                   key={building.id}
