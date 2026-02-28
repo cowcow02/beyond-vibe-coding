@@ -31,15 +31,21 @@ interface Props {
   };
   isSelected: boolean;
   onBuildingClick: (districtId: string, buildingId: string) => void;
+  worldX?: number;
+  worldZ?: number;
+  facing?: 'north' | 'south' | 'east' | 'west';
 }
 
 export function CityBuilding({
   building, district, level, accentColor, districtStyle, isSelected, onBuildingClick,
+  worldX, worldZ, facing,
 }: Props) {
-  const [wx, wz] = tileToWorld(
+  const [tileX, tileZ] = tileToWorld(
     district.originCol + building.col,
     district.originRow + building.row,
   );
+  const wx = worldX ?? tileX;
+  const wz = worldZ ?? tileZ;
 
   const numFloors = Math.min(level + 1, 6);
 
@@ -133,9 +139,18 @@ export function CityBuilding({
   const LOBBY_EXTRA = 0.06;
   const LOBBY_H_MULT = 1.15;
 
+  const facingRotationY: Record<string, number> = {
+    north: Math.PI,
+    south: 0,
+    east: -Math.PI / 2,
+    west: Math.PI / 2,
+  };
+  const rotY = facingRotationY[facing ?? 'south'] ?? 0;
+
   return (
     <group
       position={[wx + TILE_SIZE / 2, 0, wz + TILE_SIZE / 2]}
+      rotation={[0, rotY, 0]}
       onClick={(e) => { e.stopPropagation(); onBuildingClick(district.id, building.id); }}
       onPointerEnter={() => { document.body.style.cursor = 'pointer'; }}
       onPointerLeave={() => { document.body.style.cursor = 'default'; }}
