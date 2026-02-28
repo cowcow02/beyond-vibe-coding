@@ -1,2 +1,9 @@
 // app/components/CityCanvas.tsx
-export { default } from './CityScene';
+'use client';
+
+import CityScene from './CityScene';
+import type { ComponentProps } from 'react';
+
+export default function CityCanvas(props: ComponentProps<typeof CityScene>) {
+  return <CityScene {...props} />;
+}
