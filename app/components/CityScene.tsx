@@ -76,8 +76,8 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding, mo
         enableRotate={false}
         enablePan={true}
         enableZoom={true}
-        minZoom={6}
-        maxZoom={15}
+        minZoom={3}
+        maxZoom={40}
         panSpeed={1.5}
         zoomSpeed={1.2}
       />
