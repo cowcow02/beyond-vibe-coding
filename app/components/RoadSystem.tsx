@@ -1,33 +1,12 @@
 // app/components/RoadSystem.tsx
 'use client';
 
-// Types imported from the layout generator.
-// If cityLayoutGenerator.ts doesn't exist yet (parallel task),
-// we define them inline so TypeScript compiles cleanly.
-// Once Task 1 is committed these can be replaced with:
-//   import type { RoadNode, GeneratedSegment } from '../lib/cityLayoutGenerator';
-export interface RoadNode {
-  id: string;
-  x: number;
-  z: number;
-}
+import type { RoadNode, GeneratedSegment } from '../lib/cityLayoutGenerator';
 
-export interface GeneratedSegment {
-  id: string;
-  x1: number; z1: number;
-  x2: number; z2: number;
-  axis: 'x' | 'z';
-  level: number;
-}
+export type { RoadNode, GeneratedSegment };
 
 // RoadSegment is kept for CityTraffic compatibility (it mirrors GeneratedSegment).
-export interface RoadSegment {
-  id: string;
-  x1: number; z1: number;
-  x2: number; z2: number;
-  axis: 'x' | 'z';
-  level: number;
-}
+export type RoadSegment = GeneratedSegment;
 
 interface Props {
   nodes: RoadNode[];

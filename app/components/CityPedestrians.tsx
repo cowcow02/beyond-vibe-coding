@@ -5,17 +5,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-// Inline type until cityLayoutGenerator.ts is committed (Task 1)
-// Once available, replace with: import type { BlockLayout } from '../lib/cityLayoutGenerator';
-interface BlockLayout {
-  districtId: string;
-  x: number; z: number;
-  width: number; depth: number;
-  roadEdges: ('north' | 'south' | 'east' | 'west')[];
-  buildingSlots: unknown[];
-  parkX: number; parkZ: number;
-  parkWidth: number; parkDepth: number;
-}
+import type { BlockLayout } from '../lib/cityLayoutGenerator';
 
 interface Props {
   blocks: BlockLayout[];

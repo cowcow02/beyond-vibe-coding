@@ -1,7 +1,9 @@
 // app/components/CityWorld.tsx
 'use client';
 
+import { useMemo } from 'react';
 import { districts } from '../data/city';
+import { generateLayout, type GeneratedLayout } from '../lib/cityLayoutGenerator';
 import { DistrictGround } from './DistrictGround';
 import { CityBuilding } from './CityBuilding';
 import { RoadSystem } from './RoadSystem';
@@ -50,62 +52,83 @@ interface Props {
 }
 
 export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
-  const CITY_OFFSET_X = -28;
-  const CITY_OFFSET_Z = -23;
+  // Computed once on mount; Date.now() seed inside generates a unique layout each page load.
+  const layout: GeneratedLayout = useMemo(() => generateLayout(districts), []);
+
+  // Active segments for this level
+  const activeSegments = useMemo(
+    () => layout.segments.filter(s => s.level <= level),
+    [layout.segments, level]
+  );
 
   return (
-    <group position={[CITY_OFFSET_X, 0, CITY_OFFSET_Z]}>
+    <group>  {/* no position offset needed — layout is centered at origin */}
       {/* Global asphalt base — lighter daytime color */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[28, -0.05, 23]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
         <planeGeometry args={[300, 300]} />
         <meshLambertMaterial color="#2a3f52" />
       </mesh>
 
-      {/* Road system — TODO Task 7: pass layout.nodes, layout.segments, activeLevel */}
-      <RoadSystem nodes={[]} segments={[]} activeLevel={level} />
+      {/* Road system */}
+      <RoadSystem
+        nodes={layout.nodes}
+        segments={layout.segments}
+        activeLevel={level}
+      />
 
-      {/* Parks & gardens — TODO Task 7: pass layout.blocks */}
-      <CityPark blocks={[]} />
+      {/* Parks & gardens */}
+      <CityPark blocks={layout.blocks} />
 
       {/* District grounds + buildings */}
       {districts.map(district => {
-        const colors = DISTRICT_COLORS[district.id] ?? DISTRICT_COLORS['frontend'];
-        const dStyle = DISTRICT_STYLES[district.id] ?? DISTRICT_STYLES['frontend'];
+        const colors  = DISTRICT_COLORS[district.id] ?? DISTRICT_COLORS['frontend'];
+        const dStyle  = DISTRICT_STYLES[district.id] ?? DISTRICT_STYLES['frontend'];
         const isVisible = district.appearsAtLevel <= level;
+        const block   = layout.blocks.find(b => b.districtId === district.id);
 
         return (
           <group key={district.id}>
+            {/* District ground — sized to block bounds */}
             <DistrictGround
               district={district}
               groundColor={colors.ground}
               accentColor={colors.accent}
               level={level}
+              worldBounds={block ? { x: block.x, z: block.z, width: block.width, depth: block.depth } : undefined}
             />
 
-            {isVisible && district.buildings.map(building => (
-              <CityBuilding
-                key={building.id}
-                building={building}
-                district={district}
-                level={level}
-                accentColor={colors.accent}
-                districtStyle={dStyle}
-                isSelected={
-                  selectedBuilding?.districtId === district.id &&
-                  selectedBuilding?.buildingId === building.id
-                }
-                onBuildingClick={onBuildingClick}
-              />
-            ))}
+            {/* Buildings at their procedurally assigned slots */}
+            {isVisible && block?.buildingSlots.map(slot => {
+              const building = district.buildings.find(b => b.id === slot.buildingId);
+              if (!building) return null;
+              return (
+                <CityBuilding
+                  key={building.id}
+                  building={building}
+                  district={district}
+                  level={level}
+                  accentColor={colors.accent}
+                  districtStyle={dStyle}
+                  worldX={slot.x}
+                  worldZ={slot.z}
+                  facing={slot.facing}
+                  isSelected={
+                    selectedBuilding?.districtId === district.id &&
+                    selectedBuilding?.buildingId === building.id
+                  }
+                  onBuildingClick={onBuildingClick}
+                />
+              );
+            })}
           </group>
         );
       })}
 
-      {/* Traffic — TODO Task 7: pass activeSegments */}
-      <CityTraffic segments={[]} />
+      {/* Traffic */}
+      <CityTraffic segments={activeSegments} />
 
-      {/* Pedestrians — TODO Task 7: pass layout.blocks */}
-      <CityPedestrians blocks={[]} />
+      {/* Pedestrians */}
+      <CityPedestrians blocks={layout.blocks} />
     </group>
   );
 }

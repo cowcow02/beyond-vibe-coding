@@ -5,15 +5,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-// Inline type until cityLayoutGenerator.ts is committed (Task 1)
-// Once available, replace with: import type { GeneratedSegment } from '../lib/cityLayoutGenerator';
-interface GeneratedSegment {
-  id: string;
-  x1: number; z1: number;
-  x2: number; z2: number;
-  axis: 'x' | 'z';
-  level: number;
-}
+import type { GeneratedSegment } from '../lib/cityLayoutGenerator';
 
 // RoadSegment alias kept for internal helper functions
 type RoadSegment = GeneratedSegment;
