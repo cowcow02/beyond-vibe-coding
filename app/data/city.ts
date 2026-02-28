@@ -38,13 +38,13 @@ export interface City {
   districts: District[];
 }
 
-export const LEVEL_LABELS: Record<number, { title: string; tagline: string }> = {
-  0: { title: 'Vibe Coder',           tagline: 'Building with AI, unsure why it works' },
-  1: { title: 'Aware Novice',         tagline: 'Starting to understand the foundations' },
-  2: { title: 'AI-Assisted Builder',  tagline: 'Steering AI with growing confidence' },
-  3: { title: 'Independent Engineer', tagline: 'Works without AI, critiques it sharply' },
-  4: { title: 'Senior / Staff',       tagline: 'Shapes systems, mentors others' },
-  5: { title: 'Expert / Leader',      tagline: 'Defines the field, writes the standards' },
+export const LEVEL_LABELS: Record<number, { title: string; tagline: string; narrative: string }> = {
+  0: { title: 'Vibe Coder',           tagline: 'Building with AI, unsure why it works',       narrative: `You have a working app. You don't know exactly how. The AI wrote it, you wired it together, and when users show up it mostly holds. You're faster than anyone expects. What you can't see yet is the city around you — the systems, the craft, the depth — that you're building on top of without knowing.` },
+  1: { title: 'Aware Novice',         tagline: 'Starting to understand the foundations',       narrative: `Something breaks and this time you don't just paste the error back into the chat. You read it. You start to see the shape of things — why the database query is slow, what Git is actually doing when you push. The map is beginning to form. You didn't know it was this big.` },
+  2: { title: 'AI-Assisted Builder',  tagline: 'Steering AI with growing confidence',          narrative: `You know enough to steer. The AI is a tool now, not a crutch — you review what it writes, you catch its mistakes, you know why something shouldn't be done that way. You've shipped things to production and kept them running. The city keeps growing.` },
+  3: { title: 'Independent Engineer', tagline: 'Works without AI, critiques it sharply',       narrative: `You work without the scaffold. You debug without a net. You've read enough code, broken enough things, and fixed them without help that you trust your own judgment. You've started to see the patterns that hold systems together — and the gaps where they fall apart.` },
+  4: { title: 'Senior / Staff',       tagline: 'Shapes systems, mentors others',               narrative: `You shape the work of others. The decisions you make ripple through the team — the architecture you choose, the standards you set, the engineers you grow. The city is large now. You know most of it. You've learned to say "I don't know" with confidence.` },
+  5: { title: 'Expert / Leader',      tagline: 'Defines the field, writes the standards',      narrative: `The humbling is complete. Not because you've seen everything — but because you now know how much there is to keep learning. You've contributed to the field, shaped teams, made calls that mattered. The city is yours. And you know it keeps growing.` },
 };
 
 const LEVEL_TITLES = [
