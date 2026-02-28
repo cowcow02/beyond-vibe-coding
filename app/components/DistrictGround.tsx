@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { type District } from '../data/city';
 import { TILE_SIZE, districtCenter } from '../lib/cityLayout';
@@ -12,9 +13,12 @@ interface Props {
   accentColor: string;
   level: number;
   worldBounds?: { x: number; z: number; width: number; depth: number };
+  onDistrictClick?: () => void;
+  isFocused?: boolean;
+  isOtherFocused?: boolean;
 }
 
-export function DistrictGround({ district, groundColor, accentColor, level, worldBounds }: Props) {
+export function DistrictGround({ district, groundColor, accentColor, level, worldBounds, onDistrictClick, isFocused, isOtherFocused }: Props) {
   const groupRef = useRef<THREE.Group>(null);
   const opacityRef = useRef(district.appearsAtLevel <= level ? 1 : 0);
   const prevLevelRef = useRef(level);
@@ -71,6 +75,50 @@ export function DistrictGround({ district, groundColor, accentColor, level, worl
         <planeGeometry args={[width + 0.3, depth + 0.3]} />
         <meshLambertMaterial color={accentColor} transparent opacity={opacityRef.current * 0.35} />
       </mesh>
+      {/* District label — visible when unlocked */}
+      {district.appearsAtLevel <= level && (
+        <Html
+          center
+          position={[0, 0.6, 0]}
+          style={{ pointerEvents: onDistrictClick ? 'auto' : 'none' }}
+        >
+          <div
+            onClick={onDistrictClick}
+            style={{
+              cursor: onDistrictClick ? 'pointer' : 'default',
+              opacity: isOtherFocused ? 0.35 : 1,
+              transform: isFocused ? 'scale(1.12)' : 'scale(1)',
+              transition: 'opacity 0.3s, transform 0.3s',
+              textAlign: 'center',
+              userSelect: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+            }}
+          >
+            <div style={{
+              fontFamily: 'monospace',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              letterSpacing: '0.1em',
+              color: accentColor,
+              whiteSpace: 'nowrap',
+              textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+            }}>
+              ● {district.name.toUpperCase()}
+            </div>
+            <div style={{
+              fontFamily: 'monospace',
+              fontSize: '9px',
+              color: 'rgba(200,200,200,0.7)',
+              whiteSpace: 'nowrap',
+            }}>
+              {district.buildings.length} buildings
+            </div>
+          </div>
+        </Html>
+      )}
     </group>
   );
 }
