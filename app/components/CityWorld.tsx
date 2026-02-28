@@ -26,6 +26,8 @@ function CameraRig({
   const targetZoom = useRef(12);
   const targetX    = useRef(0);
   const targetZ    = useRef(0);
+  // dirty=true while animating to target; false once settled → user can pan freely
+  const dirty      = useRef(false);
 
   useEffect(() => {
     if (focusedBlock) {
@@ -62,9 +64,13 @@ function CameraRig({
         size.height / (screenH * PADDING),
       );
     }
+    dirty.current = true;
   }, [activeBlocks, focusedBlock, size]);
 
   useFrame((_, delta) => {
+    // Once settled, stop animating so the user can pan/zoom freely
+    if (!dirty.current) return;
+
     const cam  = camera as THREE.OrthographicCamera;
     const ctrl = controls as unknown as { target: THREE.Vector3 } | null;
     if (!ctrl?.target) return;
@@ -79,6 +85,11 @@ function CameraRig({
     const zDiff = targetZoom.current - cam.zoom;
     cam.zoom += zDiff * Math.min(delta * 3.5, 1);
     cam.updateProjectionMatrix();
+
+    // Mark settled when close enough
+    const panDist  = Math.abs(targetX.current - ctrl.target.x) + Math.abs(targetZ.current - ctrl.target.z);
+    const zoomDist = Math.abs(targetZoom.current - cam.zoom);
+    if (panDist < 0.05 && zoomDist < 0.1) dirty.current = false;
   });
 
   return null;

@@ -256,13 +256,16 @@ export function RoadSystem({ nodes, segments, activeLevel }: Props) {
       })}
 
       {/* ── Junction asphalt fill at every active node ────────────────────── */}
+      {/* Circle radius = ROAD_HALF×√2 covers the full junction gap while        */}
+      {/* keeping outer edges smooth — no sharp square corners poking beyond     */}
+      {/* the sidewalk corner pieces.                                             */}
       {activeNodes.map(node => (
         <mesh
           key={`jfill-${node.id}`}
           rotation={[-Math.PI / 2, 0, 0]}
           position={[node.x, 0.01, node.z]}
         >
-          <planeGeometry args={[ROAD_W, ROAD_W]} />
+          <circleGeometry args={[ROAD_HALF * Math.SQRT2, 24]} />
           <meshLambertMaterial color={ASPHALT} />
         </mesh>
       ))}
