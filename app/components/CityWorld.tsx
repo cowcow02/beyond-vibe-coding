@@ -8,6 +8,28 @@ import { CityBuilding } from './CityBuilding';
 import { RoadGrid } from './RoadGrid';
 import { CityTree } from './CityTree';
 
+type RooftopStyle = 'antenna' | 'watertower' | 'ac' | 'satellite' | 'spire';
+
+export interface DistrictStyle {
+  rooftop: RooftopStyle;
+  windowRows: number;
+  windowCols: number;
+  bodyDark: number;
+  lobbyDark: number;
+}
+
+const DISTRICT_STYLES: Record<string, DistrictStyle> = {
+  frontend:       { rooftop: 'antenna',    windowRows: 3, windowCols: 3, bodyDark: 0.25, lobbyDark: 0.15 },
+  backend:        { rooftop: 'watertower', windowRows: 2, windowCols: 2, bodyDark: 0.35, lobbyDark: 0.20 },
+  databases:      { rooftop: 'ac',         windowRows: 2, windowCols: 3, bodyDark: 0.30, lobbyDark: 0.18 },
+  devops:         { rooftop: 'ac',         windowRows: 2, windowCols: 2, bodyDark: 0.38, lobbyDark: 0.22 },
+  testing:        { rooftop: 'satellite',  windowRows: 2, windowCols: 3, bodyDark: 0.28, lobbyDark: 0.16 },
+  security:       { rooftop: 'spire',      windowRows: 1, windowCols: 2, bodyDark: 0.40, lobbyDark: 0.25 },
+  'system-design':{ rooftop: 'antenna',    windowRows: 3, windowCols: 3, bodyDark: 0.26, lobbyDark: 0.15 },
+  performance:    { rooftop: 'spire',      windowRows: 2, windowCols: 3, bodyDark: 0.22, lobbyDark: 0.13 },
+  leadership:     { rooftop: 'watertower', windowRows: 3, windowCols: 3, bodyDark: 0.24, lobbyDark: 0.14 },
+};
+
 const DISTRICT_COLORS: Record<string, { ground: string; accent: string }> = {
   frontend:         { ground: '#1e3a5f', accent: '#60a5fa' },
   backend:          { ground: '#064e3b', accent: '#34d399' },
@@ -59,20 +81,24 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
               level={level}
             />
 
-            {isVisible && district.buildings.map(building => (
-              <CityBuilding
-                key={building.id}
-                building={building}
-                district={district}
-                level={level}
-                accentColor={colors.accent}
-                isSelected={
-                  selectedBuilding?.districtId === district.id &&
-                  selectedBuilding?.buildingId === building.id
-                }
-                onBuildingClick={onBuildingClick}
-              />
-            ))}
+            {isVisible && district.buildings.map(building => {
+              const dStyle = DISTRICT_STYLES[district.id] ?? DISTRICT_STYLES['frontend'];
+              return (
+                <CityBuilding
+                  key={building.id}
+                  building={building}
+                  district={district}
+                  level={level}
+                  accentColor={colors.accent}
+                  districtStyle={dStyle}
+                  isSelected={
+                    selectedBuilding?.districtId === district.id &&
+                    selectedBuilding?.buildingId === building.id
+                  }
+                  onBuildingClick={onBuildingClick}
+                />
+              );
+            })}
           </group>
         );
       })}

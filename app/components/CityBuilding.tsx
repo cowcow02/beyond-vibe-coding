@@ -22,12 +22,19 @@ interface Props {
   district: District;
   level: number;
   accentColor: string;
+  districtStyle: {
+    rooftop: 'antenna' | 'watertower' | 'ac' | 'satellite' | 'spire';
+    windowRows: number;
+    windowCols: number;
+    bodyDark: number;
+    lobbyDark: number;
+  };
   isSelected: boolean;
   onBuildingClick: (districtId: string, buildingId: string) => void;
 }
 
 export function CityBuilding({
-  building, district, level, accentColor, isSelected, onBuildingClick,
+  building, district, level, accentColor, districtStyle, isSelected, onBuildingClick,
 }: Props) {
   const [wx, wz] = tileToWorld(
     district.originCol + building.col,
@@ -103,21 +110,37 @@ export function CityBuilding({
     });
   });
 
-  const accent    = new THREE.Color(accentColor);
-  const bodyHex   = '#' + accent.clone().multiplyScalar(0.3).getHexString();
-  const windowHex = '#' + accent.clone().multiplyScalar(1.5).getHexString();
+  const accent   = new THREE.Color(accentColor);
+  const bodyHex  = '#' + accent.clone().multiplyScalar(districtStyle.bodyDark).getHexString();
+  const lobbyHex = '#' + accent.clone().multiplyScalar(districtStyle.lobbyDark).getHexString();
+  const ledgeHex = '#' + accent.clone().multiplyScalar(0.55).getHexString();
+  const winHex   = '#' + accent.clone().multiplyScalar(1.4).getHexString();
+
+  // Window grid positions for one face (normalized 0..1, applied to face size)
+  function windowPositions(rows: number, cols: number): [number, number][] {
+    const pts: [number, number][] = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const u = (c + 1) / (cols + 1);
+        const v = (r + 0.5) / rows;
+        pts.push([u, v]);
+      }
+    }
+    return pts;
+  }
+
+  const winPts = windowPositions(districtStyle.windowRows, districtStyle.windowCols);
+  const LOBBY_EXTRA = 0.06;
+  const LOBBY_H_MULT = 1.15;
 
   return (
     <group
       position={[wx + TILE_SIZE / 2, 0, wz + TILE_SIZE / 2]}
-      onClick={(e) => {
-        e.stopPropagation();
-        onBuildingClick(district.id, building.id);
-      }}
+      onClick={(e) => { e.stopPropagation(); onBuildingClick(district.id, building.id); }}
       onPointerEnter={() => { document.body.style.cursor = 'pointer'; }}
       onPointerLeave={() => { document.body.style.cursor = 'default'; }}
     >
-      {/* Selection ring at base */}
+      {/* Selection ring */}
       {isSelected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
           <ringGeometry args={[FLOOR_W * 0.52, FLOOR_W * 0.62, 32]} />
@@ -126,60 +149,150 @@ export function CityBuilding({
       )}
 
       {Array.from({ length: 6 }, (_, floorIdx) => {
-        const isTopFloor  = floorIdx === numFloors - 1 && floorIdx < numFloors;
-        const isVisible   = floorIdx < numFloors;
-        const scale       = isSelected ? 1.05 : 1;
+        const isLobby   = floorIdx === 0;
+        const isTop     = floorIdx === numFloors - 1 && floorIdx < numFloors;
+        const isVisible = floorIdx < numFloors;
+        // Setback: floors 4+ are slightly narrower
+        const setback   = floorIdx >= 4 ? 0.92 : 1.0;
+        const selScale  = isSelected ? 1.05 : 1.0;
+        const fw = isLobby ? FLOOR_W * (1 + LOBBY_EXTRA) : FLOOR_W;
+        const fd = isLobby ? FLOOR_D * (1 + LOBBY_EXTRA) : FLOOR_D;
+        const fh = isLobby ? FLOOR_HEIGHT * LOBBY_H_MULT : FLOOR_HEIGHT;
+        const bodyColor = isLobby ? lobbyHex : bodyHex;
 
         return (
           <group
             key={floorIdx}
-            ref={(el) => { floorRefs.current[floorIdx] = el; }}
-            position={[0, floorIdx * FLOOR_HEIGHT + FLOOR_HEIGHT / 2, 0]}
+            ref={el => { floorRefs.current[floorIdx] = el; }}
+            position={[0, floorIdx * FLOOR_HEIGHT + fh / 2, 0]}
+            scale={[setback * selScale, 1, setback * selScale]}
             visible={isVisible}
           >
-            {/* Main box */}
-            <mesh scale={[scale, 1, scale]} castShadow receiveShadow>
-              <boxGeometry args={[FLOOR_W, FLOOR_HEIGHT * 0.94, FLOOR_D]} />
-              <meshLambertMaterial color={bodyHex} />
+            {/* Main floor box */}
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[fw, fh * 0.93, fd]} />
+              <meshLambertMaterial color={bodyColor} />
             </mesh>
 
-            {/* Window strip — front face (positive Z) */}
-            <mesh position={[0, FLOOR_HEIGHT * 0.08, FLOOR_D / 2 + 0.01]}>
-              <planeGeometry args={[FLOOR_W * 0.65, FLOOR_HEIGHT * 0.38]} />
-              <meshStandardMaterial
-                color={windowHex}
-                emissive={windowHex}
-                emissiveIntensity={0.5}
-                transparent
-                opacity={0.9}
-              />
+            {/* Floor ledge — horizontal band at top of each floor */}
+            <mesh position={[0, fh * 0.47, 0]}>
+              <boxGeometry args={[fw + 0.06, 0.055, fd + 0.06]} />
+              <meshLambertMaterial color={ledgeHex} />
             </mesh>
 
-            {/* Window strip — right face (positive X) */}
-            <mesh
-              position={[FLOOR_W / 2 + 0.01, FLOOR_HEIGHT * 0.08, 0]}
-              rotation={[0, Math.PI / 2, 0]}
-            >
-              <planeGeometry args={[FLOOR_D * 0.65, FLOOR_HEIGHT * 0.38]} />
-              <meshStandardMaterial
-                color={windowHex}
-                emissive={windowHex}
-                emissiveIntensity={0.5}
-                transparent
-                opacity={0.9}
-              />
-            </mesh>
-
-            {/* Roof trim on top floor */}
-            {isTopFloor && (
-              <mesh position={[0, FLOOR_HEIGHT / 2 + 0.05, 0]}>
-                <boxGeometry args={[FLOOR_W + 0.12, 0.1, FLOOR_D + 0.12]} />
+            {/* Window grid — front face (+Z) */}
+            {winPts.map(([u, v], wi) => (
+              <mesh
+                key={`wf-${wi}`}
+                position={[
+                  fw * (u - 0.5),
+                  fh * (v - 0.5) * 0.75,
+                  fd / 2 + 0.01,
+                ]}
+              >
+                <planeGeometry args={[fw * 0.18, fh * 0.22]} />
                 <meshStandardMaterial
-                  color={accentColor}
-                  emissive={accentColor}
-                  emissiveIntensity={0.7}
+                  color={winHex}
+                  emissive={winHex}
+                  emissiveIntensity={wi % 3 === 0 ? 0.2 : 0.05}
+                  transparent
+                  opacity={0.85}
                 />
               </mesh>
+            ))}
+
+            {/* Window grid — right face (+X) */}
+            {winPts.map(([u, v], wi) => (
+              <mesh
+                key={`wr-${wi}`}
+                position={[
+                  fd / 2 + 0.01,
+                  fh * (v - 0.5) * 0.75,
+                  fd * (u - 0.5),
+                ]}
+                rotation={[0, Math.PI / 2, 0]}
+              >
+                <planeGeometry args={[fd * 0.18, fh * 0.22]} />
+                <meshStandardMaterial
+                  color={winHex}
+                  emissive={winHex}
+                  emissiveIntensity={wi % 3 === 1 ? 0.2 : 0.05}
+                  transparent
+                  opacity={0.85}
+                />
+              </mesh>
+            ))}
+
+            {/* Lobby door on ground floor front face */}
+            {isLobby && (
+              <mesh position={[0, -fh * 0.25, fd / 2 + 0.012]}>
+                <planeGeometry args={[fw * 0.22, fh * 0.38]} />
+                <meshBasicMaterial color="#0a1020" />
+              </mesh>
+            )}
+
+            {/* Rooftop details on top floor */}
+            {isTop && districtStyle.rooftop === 'antenna' && (
+              <group position={[0, fh / 2, 0]}>
+                <mesh position={[0, 0.5, 0]}>
+                  <cylinderGeometry args={[0.03, 0.03, 1.0, 6]} />
+                  <meshLambertMaterial color="#8898aa" />
+                </mesh>
+                <mesh position={[0, 1.08, 0]}>
+                  <sphereGeometry args={[0.07, 6, 6]} />
+                  <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={1.2} />
+                </mesh>
+              </group>
+            )}
+
+            {isTop && districtStyle.rooftop === 'watertower' && (
+              <group position={[fw * 0.3, fh / 2 + 0.3, fd * 0.3]}>
+                {/* Legs */}
+                {[[0.1,0.1],[0.1,-0.1],[-0.1,0.1],[-0.1,-0.1]].map(([lx,lz], li) => (
+                  <mesh key={li} position={[lx, 0.05, lz]}>
+                    <cylinderGeometry args={[0.02, 0.02, 0.3, 4]} />
+                    <meshLambertMaterial color="#5a4030" />
+                  </mesh>
+                ))}
+                {/* Tank */}
+                <mesh position={[0, 0.28, 0]}>
+                  <cylinderGeometry args={[0.18, 0.18, 0.32, 8]} />
+                  <meshLambertMaterial color="#7a6050" />
+                </mesh>
+              </group>
+            )}
+
+            {isTop && districtStyle.rooftop === 'ac' && (
+              <group position={[0, fh / 2 + 0.06, 0]}>
+                {[[-0.2, -0.1], [0.15, 0.15]].map(([rx, rz], ri) => (
+                  <mesh key={ri} position={[rx, 0.06, rz]}>
+                    <boxGeometry args={[0.22, 0.12, 0.16]} />
+                    <meshLambertMaterial color="#6a7a8a" />
+                  </mesh>
+                ))}
+              </group>
+            )}
+
+            {isTop && districtStyle.rooftop === 'satellite' && (
+              <group position={[fw * 0.25, fh / 2, -fd * 0.25]}>
+                <mesh position={[0, 0.15, 0]}>
+                  <cylinderGeometry args={[0.015, 0.015, 0.3, 4]} />
+                  <meshLambertMaterial color="#aab0b8" />
+                </mesh>
+                <mesh position={[0, 0.32, 0]} rotation={[Math.PI / 4, 0, 0]}>
+                  <sphereGeometry args={[0.16, 8, 4, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
+                  <meshStandardMaterial color="#c0c8d0" side={THREE.DoubleSide} />
+                </mesh>
+              </group>
+            )}
+
+            {isTop && districtStyle.rooftop === 'spire' && (
+              <group position={[0, fh / 2, 0]}>
+                <mesh position={[0, 0.45, 0]}>
+                  <cylinderGeometry args={[0.0, 0.06, 0.9, 6]} />
+                  <meshLambertMaterial color={ledgeHex} />
+                </mesh>
+              </group>
             )}
           </group>
         );
@@ -189,7 +302,7 @@ export function CityBuilding({
       {numFloors > 0 && (
         <BuildingLabel
           name={building.name}
-          position={[0, numFloors * FLOOR_HEIGHT + 0.4, 0]}
+          position={[0, numFloors * FLOOR_HEIGHT + 0.5, 0]}
           accentColor={accentColor}
         />
       )}
