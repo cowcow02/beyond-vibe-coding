@@ -6,7 +6,6 @@ import CityCanvas from './components/CityCanvas';
 import LevelSlider from './components/LevelSlider';
 import { DistrictStrip } from './components/DistrictStrip';
 import { BuildingOverlay } from './components/BuildingOverlay';
-import { LEVEL_LABELS } from './data/city';
 
 type Mode = 'city' | 'district' | 'building';
 
@@ -67,21 +66,6 @@ export default function Home() {
         onDistrictClick={handleDistrictClick}
         onBackToCity={handleBackToCity}
       />
-
-      {/* Title — hidden when building overlay is open */}
-      {mode !== 'building' && (
-        <div
-          className="fixed top-0 left-0 right-0 z-40 p-6 pointer-events-none"
-          style={{ background: 'linear-gradient(to bottom, rgba(2,6,23,0.8), transparent)' }}
-        >
-          <h1 className="font-mono text-2xl font-bold text-amber-300 tracking-tight">
-            Beyond Vibe Coding
-          </h1>
-          <p className="font-mono text-xs text-slate-500 mt-1">
-            {LEVEL_LABELS[level].title} — {LEVEL_LABELS[level].tagline}
-          </p>
-        </div>
-      )}
 
       {/* District info strip */}
       {mode === 'district' && focusedDistrict && (
