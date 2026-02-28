@@ -18,6 +18,7 @@ export interface Building {
 export interface District {
   id: string;
   name: string;
+  tagline: string;
   type: 'technical' | 'non-technical';
   appearsAtLevel: number; // 0–5: when does this district first appear
   originCol: number; // top-left corner of district block in world grid
@@ -54,6 +55,7 @@ export const districts: District[] = [
   {
     id: 'frontend',
     name: 'Frontend',
+    tagline: 'Where browsers meet ambition',
     type: 'technical',
     appearsAtLevel: 0,
     originCol: 3, originRow: 2,
@@ -120,6 +122,7 @@ export const districts: District[] = [
   {
     id: 'backend',
     name: 'Backend & APIs',
+    tagline: 'The engine beneath every click',
     type: 'technical',
     appearsAtLevel: 0,
     originCol: 13, originRow: 2,
@@ -176,6 +179,7 @@ export const districts: District[] = [
   {
     id: 'databases',
     name: 'Databases',
+    tagline: 'Where data finds its shape',
     type: 'technical',
     appearsAtLevel: 1,
     originCol: 2, originRow: 9,
@@ -221,6 +225,7 @@ export const districts: District[] = [
   {
     id: 'devops',
     name: 'DevOps',
+    tagline: 'Ships sail, systems scale',
     type: 'technical',
     appearsAtLevel: 2,
     originCol: 13, originRow: 9,
@@ -265,6 +270,7 @@ export const districts: District[] = [
   {
     id: 'testing',
     name: 'Testing & QA',
+    tagline: 'Confidence, quantified',
     type: 'technical',
     appearsAtLevel: 2,
     originCol: 2, originRow: 16,
@@ -310,6 +316,7 @@ export const districts: District[] = [
   {
     id: 'security',
     name: 'Security',
+    tagline: 'Trust nothing, verify everything',
     type: 'technical',
     appearsAtLevel: 3,
     originCol: 10, originRow: 15,
@@ -343,6 +350,7 @@ export const districts: District[] = [
   {
     id: 'system-design',
     name: 'System Design',
+    tagline: 'Architecture at the scale of ambition',
     type: 'technical',
     appearsAtLevel: 3,
     originCol: 21, originRow: 1,
@@ -377,6 +385,7 @@ export const districts: District[] = [
   {
     id: 'performance',
     name: 'Performance',
+    tagline: 'Every millisecond is a choice',
     type: 'technical',
     appearsAtLevel: 4,
     originCol: 21, originRow: 9,
@@ -411,6 +420,7 @@ export const districts: District[] = [
   {
     id: 'leadership',
     name: 'Engineering Leadership',
+    tagline: 'The code that shapes the team',
     type: 'non-technical',
     appearsAtLevel: 5,
     originCol: 17, originRow: 18,

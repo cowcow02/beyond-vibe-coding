@@ -34,11 +34,16 @@ interface Props {
   worldX?: number;
   worldZ?: number;
   facing?: 'north' | 'south' | 'east' | 'west';
+  selectedFloor?: number;
+  hoveredFloor?: number;
+  onFloorClick?: (floor: number) => void;
+  onFloorHover?: (floor: number | null) => void;
+  showLabel?: boolean;
 }
 
 export function CityBuilding({
   building, district, level, accentColor, districtStyle, isSelected, onBuildingClick,
-  worldX, worldZ, facing,
+  worldX, worldZ, facing, selectedFloor, hoveredFloor, onFloorClick, onFloorHover, showLabel = true,
 }: Props) {
   const [tileX, tileZ] = tileToWorld(
     district.originCol + building.col,
@@ -249,6 +254,46 @@ export function CityBuilding({
               </mesh>
             )}
 
+            {/* Selected-floor amber glow */}
+            {selectedFloor === floorIdx && (
+              <mesh>
+                <boxGeometry args={[fw + 0.14, fh + 0.08, fd + 0.14]} />
+                <meshStandardMaterial
+                  color="#f59e0b"
+                  emissive="#f59e0b"
+                  emissiveIntensity={0.5}
+                  transparent
+                  opacity={0.22}
+                />
+              </mesh>
+            )}
+
+            {/* Hover glow (only when not already selected) */}
+            {hoveredFloor === floorIdx && selectedFloor !== floorIdx && (
+              <mesh>
+                <boxGeometry args={[fw + 0.14, fh + 0.08, fd + 0.14]} />
+                <meshStandardMaterial
+                  color="#94a3b8"
+                  emissive="#94a3b8"
+                  emissiveIntensity={0.4}
+                  transparent
+                  opacity={0.18}
+                />
+              </mesh>
+            )}
+
+            {/* Invisible hitbox for per-floor hover/click (only when callbacks provided) */}
+            {onFloorClick && isVisible && (
+              <mesh
+                onClick={(e) => { e.stopPropagation(); onFloorClick(floorIdx); }}
+                onPointerEnter={(e) => { e.stopPropagation(); onFloorHover?.(floorIdx); document.body.style.cursor = 'pointer'; }}
+                onPointerLeave={(e) => { e.stopPropagation(); onFloorHover?.(null); document.body.style.cursor = 'default'; }}
+              >
+                <boxGeometry args={[fw + 0.2, fh + 0.1, fd + 0.2]} />
+                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+              </mesh>
+            )}
+
             {/* Rooftop details on top floor */}
             {isTop && districtStyle.rooftop === 'antenna' && (
               <group position={[0, fh / 2, 0]}>
@@ -317,7 +362,7 @@ export function CityBuilding({
       })}
 
       {/* Floating name label */}
-      {numFloors > 0 && (
+      {showLabel && numFloors > 0 && (
         <BuildingLabel
           name={building.name}
           position={[0, numFloors * FLOOR_HEIGHT + 0.5, 0]}
