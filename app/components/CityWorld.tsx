@@ -163,19 +163,23 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focu
   // Computed once on mount; Date.now() seed inside generates a unique layout each page load.
   const layout: GeneratedLayout = useMemo(() => generateLayout(districts), []);
 
+  // When level is negative (e.g. hero section = -1), clamp to 0 for visibility checks
+  // but suppress all buildings entirely.
+  const effectiveLevel = Math.max(level, 0);
+
   // Active segments for this level
   const activeSegments = useMemo(
-    () => layout.segments.filter(s => s.level <= level),
-    [layout.segments, level]
+    () => layout.segments.filter(s => s.level <= effectiveLevel),
+    [layout.segments, effectiveLevel]
   );
 
   // Blocks whose districts have unlocked at this level
   const activeBlocks = useMemo(
     () => layout.blocks.filter(b => {
       const d = districts.find(d => d.id === b.districtId);
-      return d && d.appearsAtLevel <= level;
+      return d && d.appearsAtLevel <= effectiveLevel;
     }),
-    [layout.blocks, level]
+    [layout.blocks, effectiveLevel]
   );
 
   const focusedBlock = useMemo(
@@ -215,7 +219,7 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focu
       {districts.map(district => {
         const colors  = DISTRICT_COLORS[district.id] ?? DISTRICT_COLORS['frontend'];
         const dStyle  = DISTRICT_STYLES[district.id] ?? DISTRICT_STYLES['frontend'];
-        const isVisible = district.appearsAtLevel <= level;
+        const isVisible = district.appearsAtLevel <= effectiveLevel;
         const block   = layout.blocks.find(b => b.districtId === district.id);
 
         return (
@@ -225,7 +229,7 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focu
               district={district}
               groundColor={colors.ground}
               accentColor={colors.accent}
-              level={level}
+              level={effectiveLevel}
               worldBounds={block ? { x: block.x, z: block.z, width: block.width, depth: block.depth } : undefined}
               onDistrictClick={mode === 'city' ? () => onDistrictClick(district.id) : undefined}
               isFocused={focusedDistrictId === district.id}
@@ -233,19 +237,20 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focu
               showLabel={mode !== 'building'}
             />
 
-            {/* Buildings at their procedurally assigned slots */}
-            {isVisible && block?.buildingSlots.map(slot => {
+            {/* Buildings at their procedurally assigned slots.
+                When level < 0 (hero/empty city state) skip all buildings. */}
+            {level >= 0 && isVisible && block?.buildingSlots.map(slot => {
               const building = district.buildings.find(b => b.id === slot.buildingId);
               if (!building) return null;
               // Building can appear later than its district
-              const buildingVisible = level >= (building.appearsAtLevel ?? district.appearsAtLevel);
+              const buildingVisible = effectiveLevel >= (building.appearsAtLevel ?? district.appearsAtLevel);
               if (!buildingVisible) return null;
               return (
                 <CityBuilding
                   key={building.id}
                   building={building}
                   district={district}
-                  level={level}
+                  level={effectiveLevel}
                   accentColor={colors.accent}
                   districtStyle={dStyle}
                   worldX={slot.x}
