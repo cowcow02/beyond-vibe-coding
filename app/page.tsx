@@ -59,10 +59,9 @@ export default function Home() {
       setTimeout(() => {
         const target = pendingLevelRef.current;
         if (target === 0) {
-          // L0 after hero: briefly clear buildings so they spring in fresh
-          setStoryLevel(-1);
+          // L0: keep the full city — the narrative is "what you can't see yet
+          // is the city around you." Showing the full city during L0 is intentional.
           setCityBrightness(1.0);
-          setTimeout(() => setStoryLevel(0), 80);
         } else {
           setStoryLevel(target);
           setCityBrightness(1.0);
