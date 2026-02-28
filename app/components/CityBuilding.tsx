@@ -35,12 +35,15 @@ interface Props {
   worldZ?: number;
   facing?: 'north' | 'south' | 'east' | 'west';
   selectedFloor?: number;
+  hoveredFloor?: number;
+  onFloorClick?: (floor: number) => void;
+  onFloorHover?: (floor: number | null) => void;
   showLabel?: boolean;
 }
 
 export function CityBuilding({
   building, district, level, accentColor, districtStyle, isSelected, onBuildingClick,
-  worldX, worldZ, facing, selectedFloor, showLabel = true,
+  worldX, worldZ, facing, selectedFloor, hoveredFloor, onFloorClick, onFloorHover, showLabel = true,
 }: Props) {
   const [tileX, tileZ] = tileToWorld(
     district.originCol + building.col,
@@ -262,6 +265,32 @@ export function CityBuilding({
                   transparent
                   opacity={0.22}
                 />
+              </mesh>
+            )}
+
+            {/* Hover glow (only when not already selected) */}
+            {hoveredFloor === floorIdx && selectedFloor !== floorIdx && (
+              <mesh>
+                <boxGeometry args={[fw + 0.14, fh + 0.08, fd + 0.14]} />
+                <meshStandardMaterial
+                  color="#94a3b8"
+                  emissive="#94a3b8"
+                  emissiveIntensity={0.4}
+                  transparent
+                  opacity={0.18}
+                />
+              </mesh>
+            )}
+
+            {/* Invisible hitbox for per-floor hover/click (only when callbacks provided) */}
+            {onFloorClick && isVisible && (
+              <mesh
+                onClick={(e) => { e.stopPropagation(); onFloorClick(floorIdx); }}
+                onPointerEnter={(e) => { e.stopPropagation(); onFloorHover?.(floorIdx); document.body.style.cursor = 'pointer'; }}
+                onPointerLeave={(e) => { e.stopPropagation(); onFloorHover?.(null); document.body.style.cursor = 'default'; }}
+              >
+                <boxGeometry args={[fw + 0.2, fh + 0.1, fd + 0.2]} />
+                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
               </mesh>
             )}
 
