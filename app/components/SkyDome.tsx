@@ -36,16 +36,16 @@ export function SkyDome() {
 
   return (
     <>
-      {/* Sky sphere — inside-facing gradient */}
+      {/* Sky sphere — inside-facing milky white */}
       <mesh>
         <sphereGeometry args={[280, 32, 16]} />
-        <meshBasicMaterial color="#5ba3d9" side={THREE.BackSide} />
+        <meshBasicMaterial color="#dde6ee" side={THREE.BackSide} />
       </mesh>
 
-      {/* Horizon brightening — second smaller sphere */}
+      {/* Horizon brightening — warm white haze */}
       <mesh>
         <sphereGeometry args={[270, 32, 8, 0, Math.PI * 2, 0, Math.PI * 0.35]} />
-        <meshBasicMaterial color="#a8d4f0" side={THREE.BackSide} transparent opacity={0.6} />
+        <meshBasicMaterial color="#f0ece6" side={THREE.BackSide} transparent opacity={0.7} />
       </mesh>
 
       {/* Clouds */}

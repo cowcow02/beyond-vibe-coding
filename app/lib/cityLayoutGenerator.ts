@@ -47,15 +47,16 @@ export interface GeneratedLayout {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ROAD_W   = 2.5;
+const ROAD_W    = 2.5;
 const ROAD_HALF = ROAD_W / 2;
-const COLS     = 4;   // 4×4 intersection grid → 3×3 blocks = 9 districts
-const ROWS     = 4;
-const CELL_W   = 18;  // base world units between columns
-const CELL_D   = 16;  // base world units between rows
-const JX       = 3;   // horizontal jitter
-const JZ       = 2.5; // vertical jitter
-const PERIMETER = TILE_SIZE * 1.0; // building strip depth
+const COLS      = 4;    // 4×4 intersection grid → 3×3 blocks = 9 districts
+const ROWS      = 4;
+const JX        = 2;    // horizontal jitter (smaller now — blocks are sized to content)
+const JZ        = 1.5;  // vertical jitter
+const PERIMETER = TILE_SIZE * 1.0;  // building strip depth
+const SLOT_SPACING = TILE_SIZE * 1.3; // space between building slots on an edge
+const EDGE_INSET   = TILE_SIZE * 0.6; // how far from road edge building sits
+const MIN_PARK  = 3;    // minimum interior park dimension
 
 // ─── Seeded PRNG (mulberry32) ─────────────────────────────────────────────────
 
@@ -69,21 +70,74 @@ function makePRNG(seed: number) {
   };
 }
 
+// ─── Block size from building count ───────────────────────────────────────────
+// Buildings are placed on road-facing perimeter edges; we need at least
+// ceil(N/2) slots per main edge so all buildings fit on 2 edges minimum.
+// Block width = slots * spacing + side margins. No wasted empty space.
+
+function blockWidthForN(n: number): number {
+  const slotsPerEdge = Math.ceil(n / 2);
+  return Math.max(slotsPerEdge * SLOT_SPACING + 2 * EDGE_INSET + 2.5, MIN_PARK + 2 * PERIMETER + 1);
+}
+
+function blockDepthForN(n: number): number {
+  return blockWidthForN(n) * 0.88; // slightly rectangular
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export function generateLayout(districts: District[]): GeneratedLayout {
   const rng = makePRNG(Date.now() % 2147483647);
 
-  // ── Intersection grid ──────────────────────────────────────────────────────
-  // gx[c] and gz[r] hold the world-space position of each intersection column/row.
-  // Small random jitter makes each layout unique.
-  const gx = Array.from({ length: COLS }, (_, c) =>
-    Math.round((c - (COLS - 1) / 2) * CELL_W + (rng() * 2 - 1) * JX)
+  // ── Step 0: Assign districts to grid cells by level (center = low, edge = high) ──
+  const sortedDistricts = [...districts].sort((a, b) => a.appearsAtLevel - b.appearsAtLevel);
+
+  // All 9 block cells sorted innermost-first (same order as rawBlocks below)
+  const blockCellOrder: Array<{ r: number; c: number }> = [];
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+    blockCellOrder.push({ r, c });
+  }
+  blockCellOrder.sort((a, b) => {
+    const da = Math.sqrt((a.r - 1) ** 2 + (a.c - 1) ** 2);
+    const db = Math.sqrt((b.r - 1) ** 2 + (b.c - 1) ** 2);
+    return da - db || a.r - b.r || a.c - b.c;
+  });
+
+  // cellDistrict[r][c] = which district occupies that block cell
+  const cellDistrict: (District | undefined)[][] = Array.from({ length: 3 }, () => Array(3).fill(undefined));
+  blockCellOrder.forEach(({ r, c }, i) => {
+    cellDistrict[r][c] = sortedDistricts[i];
+  });
+
+  // ── Step 1: Compute grid spacing from building counts ─────────────────────
+  // Column c block width = max of the 3 districts in that column
+  const colW = [0, 1, 2].map(c =>
+    Math.max(...[0, 1, 2].map(r => blockWidthForN(cellDistrict[r][c]?.buildings.length ?? 2)))
   );
-  const gz = Array.from({ length: ROWS }, (_, r) =>
-    Math.round((r - (ROWS - 1) / 2) * CELL_D + (rng() * 2 - 1) * JZ)
+  // Row r block depth = max of the 3 districts in that row
+  const rowD = [0, 1, 2].map(r =>
+    Math.max(...[0, 1, 2].map(c => blockDepthForN(cellDistrict[r][c]?.buildings.length ?? 2)))
   );
 
+  // ── Step 2: Compute intersection positions from block sizes ───────────────
+  // Layout: [road0] [block_col0] [road1] [block_col1] [road2] [block_col2] [road3]
+  // gx[c] = center of N-S road to the left of block column c.
+  // The whole layout is centered at x=0.
+  const gxBase: number[] = [
+    -(colW[0] + ROAD_W + colW[1] + ROAD_W + colW[2]) / 2,
+  ];
+  for (let c = 1; c < COLS; c++) gxBase.push(gxBase[c - 1] + colW[c - 1] + ROAD_W);
+
+  const gzBase: number[] = [
+    -(rowD[0] + ROAD_W + rowD[1] + ROAD_W + rowD[2]) / 2,
+  ];
+  for (let r = 1; r < ROWS; r++) gzBase.push(gzBase[r - 1] + rowD[r - 1] + ROAD_W);
+
+  // Add small jitter for organic feel
+  const gx = gxBase.map(v => Math.round(v + (rng() * 2 - 1) * JX));
+  const gz = gzBase.map(v => Math.round(v + (rng() * 2 - 1) * JZ));
+
+  // ── Step 3: Build intersection nodes ─────────────────────────────────────
   const grid: RoadNode[][] = Array.from({ length: ROWS }, (_, r) =>
     Array.from({ length: COLS }, (_, c) => ({
       id: `n_${r}_${c}`,
@@ -93,15 +147,13 @@ export function generateLayout(districts: District[]): GeneratedLayout {
   );
   const nodes: RoadNode[] = grid.flat();
 
-  // ── Road segments ──────────────────────────────────────────────────────────
+  // ── Step 4: Road segments ─────────────────────────────────────────────────
   const segments: GeneratedSegment[] = [];
 
-  // hEdge[r][c] = true if horizontal road exists between grid[r][c] and grid[r][c+1]
   const hEdge: boolean[][] = Array.from({ length: ROWS }, () => Array(COLS - 1).fill(false));
-  // vEdge[r][c] = true if vertical road exists between grid[r][c] and grid[r+1][c]
   const vEdge: boolean[][] = Array.from({ length: ROWS - 1 }, () => Array(COLS).fill(false));
 
-  // Horizontal roads — always present (form the main east-west arteries)
+  // Horizontal roads — always present
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS - 1; c++) {
       hEdge[r][c] = true;
@@ -115,8 +167,7 @@ export function generateLayout(districts: District[]): GeneratedLayout {
     }
   }
 
-  // Vertical roads — 80% chance each, but always connect the 2 inner columns
-  // of the 2 inner rows to guarantee the central blocks are fully enclosed.
+  // Vertical roads — 80% chance, always connect inner core
   for (let r = 0; r < ROWS - 1; r++) {
     for (let c = 0; c < COLS; c++) {
       const isInnerCore = r >= 1 && r <= 1 && c >= 1 && c <= 2;
@@ -133,8 +184,7 @@ export function generateLayout(districts: District[]): GeneratedLayout {
     }
   }
 
-  // ── Blocks ─────────────────────────────────────────────────────────────────
-  // Each cell (r, c) in the 3×3 block grid may become a district block.
+  // ── Step 5: Derive blocks from grid ───────────────────────────────────────
   interface RawBlock {
     r: number; c: number;
     x: number; z: number;
@@ -147,18 +197,16 @@ export function generateLayout(districts: District[]): GeneratedLayout {
   for (let r = 0; r < ROWS - 1; r++) {
     for (let c = 0; c < COLS - 1; c++) {
       const roadEdges: RoadEdge[] = [];
-      if (hEdge[r][c])     roadEdges.push('north');
-      if (hEdge[r + 1][c]) roadEdges.push('south');
-      if (vEdge[r][c])     roadEdges.push('west');
-      if (vEdge[r][c + 1]) roadEdges.push('east');
+      if (hEdge[r][c])      roadEdges.push('north');
+      if (hEdge[r + 1][c])  roadEdges.push('south');
+      if (vEdge[r][c])      roadEdges.push('west');
+      if (vEdge[r][c + 1])  roadEdges.push('east');
 
-      // Interior starts just inside road half-width on road-facing sides
       const bx = gx[c]     + ROAD_HALF + 0.2;
       const bz = gz[r]     + ROAD_HALF + 0.2;
-      const bw = gx[c + 1] - gx[c]     - ROAD_W - 0.4;
-      const bd = gz[r + 1] - gz[r]     - ROAD_W - 0.4;
+      const bw = gx[c + 1] - gx[c]    - ROAD_W - 0.4;
+      const bd = gz[r + 1] - gz[r]    - ROAD_W - 0.4;
 
-      // Distance from center cell (1,1)
       const dr = r - 1, dc = c - 1;
       rawBlocks.push({
         r, c,
@@ -171,9 +219,8 @@ export function generateLayout(districts: District[]): GeneratedLayout {
     }
   }
 
-  // Sort blocks innermost-first; sort districts by appearsAtLevel; zip them.
-  rawBlocks.sort((a, b) => a.distFromCenter - b.distFromCenter);
-  const sortedDistricts = [...districts].sort((a, b) => a.appearsAtLevel - b.appearsAtLevel);
+  // Sort innermost-first, zip with districts sorted by appearsAtLevel
+  rawBlocks.sort((a, b) => a.distFromCenter - b.distFromCenter || a.r - b.r || a.c - b.c);
 
   const blocks: BlockLayout[] = rawBlocks.slice(0, sortedDistricts.length).map((rb, i) => {
     const district = sortedDistricts[i];
@@ -183,7 +230,7 @@ export function generateLayout(districts: District[]): GeneratedLayout {
     const parkWidth  = Math.max(rb.width  - PERIMETER * 2, 1);
     const parkDepth  = Math.max(rb.depth  - PERIMETER * 2, 1);
 
-    const buildingSlots = placeBuildings(district, rb.x, rb.z, rb.width, rb.depth, rb.roadEdges, rng);
+    const buildingSlots = placeBuildings(district, rb.x, rb.z, rb.width, rb.depth, rb.roadEdges);
 
     return {
       districtId: district.id,
@@ -200,8 +247,6 @@ export function generateLayout(districts: District[]): GeneratedLayout {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Determine at what city level a road segment should become visible.
-// Roads closer to the grid center appear at lower levels.
 function segLevel(r: number, c: number, ROWS: number, COLS: number): number {
   const centerR = (ROWS - 1) / 2;
   const centerC = (COLS - 1) / 2;
@@ -212,20 +257,14 @@ function segLevel(r: number, c: number, ROWS: number, COLS: number): number {
   return 3;
 }
 
-// Place buildings along road-facing perimeter edges of the block.
-// Buildings fill edges in order: north → south → east → west.
-// Remaining buildings go on non-road edges as needed.
 function placeBuildings(
   district: District,
   bx: number, bz: number,
   bw: number, bd: number,
   roadEdges: RoadEdge[],
-  rng: () => number,
 ): BuildingSlot[] {
   const slots: BuildingSlot[] = [];
   const buildings = [...district.buildings];
-  const SLOT_SPACING = TILE_SIZE * 1.3;
-  const EDGE_INSET   = TILE_SIZE * 0.6; // how far from road edge building sits
   let bi = 0;
 
   function edge(
@@ -250,14 +289,14 @@ function placeBuildings(
     }
   }
 
-  // Prioritise road-facing edges, then fill remaining buildings on non-road edges
-  const priority: RoadEdge[] = ['north', 'south', 'east', 'west'];
+  // Road-facing edges first, then remaining edges for any leftover buildings
+  const allEdges: RoadEdge[] = ['north', 'south', 'east', 'west'];
+  const priority = [...roadEdges, ...allEdges.filter(e => !roadEdges.includes(e))];
   for (const f of priority) {
-    if (!roadEdges.includes(f)) continue;
-    if (f === 'north') edge('north', bw, bx, bz + EDGE_INSET,        true);
-    if (f === 'south') edge('south', bw, bx, bz + bd - EDGE_INSET,   true);
-    if (f === 'west')  edge('west',  bd, bx + EDGE_INSET,        bz, false);
-    if (f === 'east')  edge('east',  bd, bx + bw - EDGE_INSET,   bz, false);
+    if (f === 'north') edge('north', bw, bx, bz + EDGE_INSET,       true);
+    if (f === 'south') edge('south', bw, bx, bz + bd - EDGE_INSET,  true);
+    if (f === 'west')  edge('west',  bd, bx + EDGE_INSET,       bz, false);
+    if (f === 'east')  edge('east',  bd, bx + bw - EDGE_INSET,  bz, false);
   }
   return slots;
 }
