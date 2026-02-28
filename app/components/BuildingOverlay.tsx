@@ -176,12 +176,12 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
 
   return (
     <div
-      className="fixed inset-0 flex"
+      className="fixed inset-0 flex flex-col sm:flex-row"
       style={{ zIndex: 9999, backdropFilter: 'blur(12px)', background: 'rgba(2,6,23,0.92)' }}
     >
       {/* ── Left panel ───────────────────────────────────────────────────── */}
       <div
-        className="w-1/2 flex flex-col border-r"
+        className="flex-1 sm:w-1/2 sm:flex-none flex flex-col border-b sm:border-b-0 sm:border-r"
         style={{
           borderColor: 'rgba(51,65,85,0.4)',
           background: 'rgba(4,10,30,0.6)',
@@ -233,6 +233,11 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
               </div>
             )}
           </div>
+        </div>
+
+        {/* Mobile-only slider */}
+        <div className="sm:hidden px-6 py-3 border-b" style={{ borderColor: 'rgba(51,65,85,0.4)' }}>
+          <LevelSlider level={level} onChange={onLevelChange} className="flex flex-col items-center" />
         </div>
 
         {showDetail && activeFloor ? (
@@ -411,8 +416,8 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
         )}
       </div>
 
-      {/* ── Right: 3D building mini-canvas + slider ──────────────────────── */}
-      <div className="w-1/2 flex flex-col" style={{ background: '#050d1f' }}>
+      {/* ── Right: 3D building mini-canvas + slider — hidden on mobile ───── */}
+      <div className="hidden sm:flex w-1/2 flex-col" style={{ background: '#050d1f' }}>
         <div className="flex-1 relative">
           {/* Radial spotlight behind building */}
           <div
