@@ -41,11 +41,13 @@ function CameraRig({
       const spanZ = focusedBlock.depth  + 6;
       const screenW = (spanX + spanZ) / Math.SQRT2;
       const screenH = (spanX + spanZ) / Math.sqrt(6);
-      const PADDING = isPortrait ? 1.1 : 1.6;
-      targetZoom.current = Math.min(
-        size.width  / (screenW * PADDING),
-        size.height / (screenH * PADDING),
-      );
+      const PADDING = isPortrait ? 0.75 : 1.6;
+      targetZoom.current = isPortrait
+        ? size.width / (screenW * PADDING)          // portrait: fit to width only
+        : Math.min(
+            size.width  / (screenW * PADDING),
+            size.height / (screenH * PADDING),
+          );
     } else if (activeBlocks.length > 0) {
       let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
       for (const b of activeBlocks) {
@@ -60,11 +62,13 @@ function CameraRig({
       const spanZ = maxZ - minZ;
       const screenW = (spanX + spanZ) / Math.SQRT2;
       const screenH = (spanX + spanZ) / Math.sqrt(6);
-      const PADDING = isPortrait ? 0.9 : 1.35;
-      targetZoom.current = Math.min(
-        size.width  / (screenW * PADDING),
-        size.height / (screenH * PADDING),
-      );
+      const PADDING = isPortrait ? 0.7 : 1.35;
+      targetZoom.current = isPortrait
+        ? size.width / (screenW * PADDING)          // portrait: fit to width only
+        : Math.min(
+            size.width  / (screenW * PADDING),
+            size.height / (screenH * PADDING),
+          );
     }
     dirty.current = true;
   }, [activeBlocks, focusedBlock, size]);

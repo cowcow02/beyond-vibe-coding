@@ -114,9 +114,9 @@ export function DistrictGround({ district, groundColor, accentColor, level, worl
             }}>
               <div style={{
                 fontFamily: 'monospace',
-                fontSize: '11px',
+                fontSize: '10px',
                 fontWeight: 'bold',
-                letterSpacing: '0.1em',
+                letterSpacing: '0.08em',
                 color: '#ffffff',
                 whiteSpace: 'nowrap',
                 display: 'flex',
@@ -128,11 +128,11 @@ export function DistrictGround({ district, groundColor, accentColor, level, worl
               </div>
               <div style={{
                 fontFamily: 'monospace',
-                fontSize: '9px',
-                color: 'rgba(180,210,255,0.75)',
+                fontSize: '8px',
+                color: 'rgba(180,210,255,0.65)',
                 whiteSpace: 'nowrap',
               }}>
-                {district.buildings.length} buildings
+                {district.buildings.length} bldgs
               </div>
             </div>
           </div>
