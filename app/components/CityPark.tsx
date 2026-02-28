@@ -24,11 +24,11 @@ interface ParkDef {
   fountain: { x: number; z: number } | null;
 }
 
-// Garden patch centers — placed at open corners of each district
+// Garden patch centers — placed INSIDE each district interior, away from roads
 const PARKS: ParkDef[] = [
-  // frontend district corner (col=2,row=2 → x=4,z=4 → corner patch at x=3,z=3)
+  // Frontend interior courtyard (district x:6-22, z:4-14 → center ~14,9)
   {
-    cx: 3.2, cz: 3.2,
+    cx: 14, cz: 8,
     flowers: [
       { x: -0.5, z:  0.3, color: '#ff6b8a', freq: 2.1, phase: 0.0 },
       { x:  0.3, z: -0.4, color: '#ffb347', freq: 1.7, phase: 1.2 },
@@ -39,9 +39,9 @@ const PARKS: ParkDef[] = [
     trees: [{ x: 0.8, z: 0.8, scale: 0.7 }, { x: -0.9, z: -0.2, scale: 0.6 }],
     fountain: { x: 0, z: 0 },
   },
-  // backend district
+  // Backend interior (district x:26-38, z:4-14 → center ~32,9)
   {
-    cx: 17.2, cz: 3.2,
+    cx: 31, cz: 9,
     flowers: [
       { x: -0.4, z: 0.2,  color: '#34d399', freq: 1.8, phase: 0.5 },
       { x:  0.4, z: -0.3, color: '#6ee7b7', freq: 2.2, phase: 1.8 },
@@ -50,9 +50,20 @@ const PARKS: ParkDef[] = [
     trees: [{ x: 0.7, z: 0.7, scale: 0.65 }],
     fountain: null,
   },
-  // databases district
+  // SystemDesign interior (district x:42-52, z:2-14 → center ~47,8)
   {
-    cx: 3.2, cz: 15.2,
+    cx: 47, cz: 8,
+    flowers: [
+      { x: -0.4, z: 0.4,  color: '#38bdf8', freq: 2.2, phase: 0.6 },
+      { x:  0.4, z: -0.3, color: '#7dd3fc', freq: 1.7, phase: 1.9 },
+      { x: -0.3, z: -0.5, color: '#bae6fd', freq: 2.0, phase: 3.2 },
+    ],
+    trees: [{ x: 0.8, z: 0.8, scale: 0.7 }, { x: -0.8, z: -0.3, scale: 0.6 }],
+    fountain: { x: 0, z: 0 },
+  },
+  // Databases interior (district x:4-18, z:18-28 → center ~11,23)
+  {
+    cx: 10, cz: 23,
     flowers: [
       { x: -0.5, z: 0.3,  color: '#a78bfa', freq: 2.4, phase: 0.3 },
       { x:  0.3, z: -0.5, color: '#c4b5fd', freq: 1.6, phase: 1.5 },
@@ -60,21 +71,31 @@ const PARKS: ParkDef[] = [
       { x: -0.3, z: -0.2, color: '#7c3aed', freq: 1.9, phase: 0.9 },
     ],
     trees: [{ x: 0.8, z: -0.8, scale: 0.7 }, { x: -0.8, z: 0.8, scale: 0.6 }],
-    fountain: { x: 0.1, z: 0.1 },
+    fountain: null,
   },
-  // devops
+  // DevOps interior (district x:26-38, z:18-28 → center ~32,23)
   {
-    cx: 17.2, cz: 15.2,
+    cx: 31, cz: 23,
     flowers: [
       { x: -0.4, z: 0.3,  color: '#fb923c', freq: 2.0, phase: 0.7 },
       { x:  0.4, z: -0.4, color: '#fed7aa', freq: 1.8, phase: 2.0 },
     ],
     trees: [{ x: 0.8, z: 0.8, scale: 0.65 }],
+    fountain: { x: 0, z: 0 },
+  },
+  // Performance interior (district x:42-52, z:18-26 → center ~47,22)
+  {
+    cx: 47, cz: 22,
+    flowers: [
+      { x: -0.5, z: 0.3,  color: '#fbbf24', freq: 2.3, phase: 0.2 },
+      { x:  0.4, z: -0.4, color: '#fde68a', freq: 1.8, phase: 1.4 },
+    ],
+    trees: [{ x: 0.7, z: 0.7, scale: 0.65 }],
     fountain: null,
   },
-  // testing
+  // Testing interior (district x:4-16, z:32-40 → center ~10,36)
   {
-    cx: 3.2, cz: 27.2,
+    cx: 9, cz: 36,
     flowers: [
       { x: -0.5, z: 0.3,  color: '#f472b6', freq: 2.1, phase: 1.1 },
       { x:  0.3, z: -0.4, color: '#fbcfe8', freq: 1.9, phase: 2.3 },
@@ -83,30 +104,9 @@ const PARKS: ParkDef[] = [
     trees: [{ x: 0.8, z: -0.8, scale: 0.7 }],
     fountain: null,
   },
-  // system-design
+  // Security interior (district x:20-30, z:30-40 → center ~25,35)
   {
-    cx: 31.2, cz: 3.2,
-    flowers: [
-      { x: -0.4, z: 0.4,  color: '#38bdf8', freq: 2.2, phase: 0.6 },
-      { x:  0.4, z: -0.3, color: '#7dd3fc', freq: 1.7, phase: 1.9 },
-      { x: -0.3, z: -0.5, color: '#bae6fd', freq: 2.0, phase: 3.2 },
-    ],
-    trees: [{ x: 0.8, z: 0.8, scale: 0.7 }, { x: -0.8, z: -0.3, scale: 0.6 }],
-    fountain: { x: -0.1, z: -0.1 },
-  },
-  // performance
-  {
-    cx: 31.2, cz: 15.2,
-    flowers: [
-      { x: -0.5, z: 0.3,  color: '#fbbf24', freq: 2.3, phase: 0.2 },
-      { x:  0.4, z: -0.4, color: '#fde68a', freq: 1.8, phase: 1.4 },
-    ],
-    trees: [{ x: 0.7, z: 0.7, scale: 0.65 }],
-    fountain: null,
-  },
-  // leadership
-  {
-    cx: 31.2, cz: 27.2,
+    cx: 25, cz: 35,
     flowers: [
       { x: -0.5, z: 0.4,  color: '#e879f9', freq: 2.0, phase: 0.8 },
       { x:  0.4, z: -0.4, color: '#f0abfc', freq: 1.7, phase: 2.1 },
@@ -114,7 +114,18 @@ const PARKS: ParkDef[] = [
       { x:  0.6, z:  0.3, color: '#d946ef', freq: 1.9, phase: 1.0 },
     ],
     trees: [{ x: 0.9, z: 0.9, scale: 0.75 }, { x: -0.9, z: 0.2, scale: 0.65 }],
-    fountain: { x: 0, z: -0.2 },
+    fountain: { x: 0, z: 0 },
+  },
+  // Leadership interior (district x:34-48, z:36-44 → center ~41,40)
+  {
+    cx: 41, cz: 40,
+    flowers: [
+      { x: -0.5, z: 0.3,  color: '#fbbf24', freq: 2.3, phase: 0.2 },
+      { x:  0.4, z: -0.4, color: '#fde68a', freq: 1.8, phase: 1.4 },
+      { x: -0.2, z: -0.5, color: '#fef3c7', freq: 2.1, phase: 2.6 },
+    ],
+    trees: [{ x: 0.8, z: 0.8, scale: 0.7 }, { x: -0.8, z: -0.3, scale: 0.6 }],
+    fountain: null,
   },
 ];
 
