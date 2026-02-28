@@ -449,7 +449,7 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
               enablePan={false}
               minZoom={8}
               maxZoom={150}
-              target={[0, 1.5, 0]}
+              target={[0, 3.5, 0]}
             />
           </Canvas>
 
