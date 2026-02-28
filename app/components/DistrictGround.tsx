@@ -11,9 +11,10 @@ interface Props {
   groundColor: string;
   accentColor: string;
   level: number;
+  worldBounds?: { x: number; z: number; width: number; depth: number };
 }
 
-export function DistrictGround({ district, groundColor, accentColor, level }: Props) {
+export function DistrictGround({ district, groundColor, accentColor, level, worldBounds }: Props) {
   const groupRef = useRef<THREE.Group>(null);
   const opacityRef = useRef(district.appearsAtLevel <= level ? 1 : 0);
   const prevLevelRef = useRef(level);
@@ -43,12 +44,20 @@ export function DistrictGround({ district, groundColor, accentColor, level }: Pr
     });
   });
 
-  const [cx, cz] = districtCenter(
-    district.originCol, district.originRow,
-    district.cols, district.rows,
-  );
-  const width = district.cols * TILE_SIZE;
-  const depth = district.rows * TILE_SIZE;
+  let cx: number, cz: number, width: number, depth: number;
+  if (worldBounds) {
+    cx = worldBounds.x + worldBounds.width / 2;
+    cz = worldBounds.z + worldBounds.depth / 2;
+    width = worldBounds.width;
+    depth = worldBounds.depth;
+  } else {
+    [cx, cz] = districtCenter(
+      district.originCol, district.originRow,
+      district.cols, district.rows,
+    );
+    width = district.cols * TILE_SIZE;
+    depth = district.rows * TILE_SIZE;
+  }
 
   return (
     <group ref={groupRef} position={[cx, 0, cz]}>
