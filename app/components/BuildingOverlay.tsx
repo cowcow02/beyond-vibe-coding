@@ -8,11 +8,13 @@ import * as THREE from 'three';
 import { districts } from '../data/city';
 import { CityBuilding } from './CityBuilding';
 import { DISTRICT_COLORS, DISTRICT_STYLES } from './CityWorld';
+import LevelSlider from './LevelSlider';
 
 interface Props {
   districtId: string;
   buildingId: string;
   level: number;
+  onLevelChange: (level: number) => void;
   onBack: () => void;
 }
 
@@ -74,7 +76,7 @@ function RotatingBuilding({
 
 // ── Main overlay ─────────────────────────────────────────────────────────────
 
-export function BuildingOverlay({ districtId, buildingId, level, onBack }: Props) {
+export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, onBack }: Props) {
   const [selectedFloor, setSelectedFloor] = useState<number | null>(level);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -179,49 +181,53 @@ export function BuildingOverlay({ districtId, buildingId, level, onBack }: Props
           })}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t" style={{ borderColor: 'rgba(51,65,85,0.5)' }}>
-          <p className="font-mono text-[10px] text-slate-600 text-center">
-            Drag the level slider to unlock more floors
-          </p>
-        </div>
       </div>
 
-      {/* ── Right: 3D building mini-canvas ───────────────────────────────── */}
-      <div className="w-1/2 relative" style={{ background: '#0a1628', height: '100%' }}>
-        <Canvas
-          style={{ width: '100%', height: '100%' }}
-          orthographic
-          camera={{
-            position: [40, 28, 40],
-            zoom: 30,
-            near: 0.1,
-            far: 500,
-            up: [0, 1, 0],
-          }}
-        >
-          <color attach="background" args={['#0a1628']} />
-          <RotatingBuilding
-            districtId={districtId}
-            buildingId={buildingId}
-            level={level}
-            selectedFloor={selectedFloor}
-          />
-          <OrbitControls
-            enableRotate={true}
-            enableZoom={true}
-            enablePan={false}
-            minZoom={8}
-            maxZoom={60}
-          />
-        </Canvas>
+      {/* ── Right: 3D building mini-canvas + slider ──────────────────────── */}
+      <div className="w-1/2 flex flex-col" style={{ background: '#0a1628' }}>
+        {/* Canvas grows to fill remaining space */}
+        <div className="flex-1 relative">
+          <Canvas
+            style={{ width: '100%', height: '100%' }}
+            orthographic
+            camera={{
+              position: [40, 28, 40],
+              zoom: 50,
+              near: 0.1,
+              far: 500,
+              up: [0, 1, 0],
+            }}
+          >
+            <color attach="background" args={['#0a1628']} />
+            <RotatingBuilding
+              districtId={districtId}
+              buildingId={buildingId}
+              level={level}
+              selectedFloor={selectedFloor}
+            />
+            <OrbitControls
+              enableRotate={true}
+              enableZoom={true}
+              enablePan={false}
+              minZoom={8}
+              maxZoom={100}
+            />
+          </Canvas>
 
-        {/* Hint overlay */}
-        <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
-          <span className="font-mono text-[10px] text-slate-600">
-            drag to rotate · scroll to zoom
-          </span>
+          {/* Hint */}
+          <div className="absolute top-3 left-0 right-0 text-center pointer-events-none">
+            <span className="font-mono text-[10px] text-slate-700">
+              drag to rotate · scroll to zoom
+            </span>
+          </div>
         </div>
+
+        {/* Slider below the canvas */}
+        <LevelSlider
+          level={level}
+          onChange={onLevelChange}
+          className="flex flex-col items-center pb-5 pt-3"
+        />
       </div>
     </div>
   );

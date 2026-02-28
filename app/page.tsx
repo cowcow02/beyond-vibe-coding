@@ -82,20 +82,19 @@ export default function Home() {
         />
       )}
 
-      {/* Building overlay */}
+      {/* Building overlay — slider is embedded inside */}
       {mode === 'building' && selectedBuilding && (
         <BuildingOverlay
           districtId={selectedBuilding.districtId}
           buildingId={selectedBuilding.buildingId}
           level={level}
+          onLevelChange={setLevel}
           onBack={handleBackToDistrict}
         />
       )}
 
-      {/* Level slider — always visible, above overlay in building mode */}
-      <div style={{ position: 'relative', zIndex: mode === 'building' ? 10000 : undefined }}>
-        <LevelSlider level={level} onChange={setLevel} />
-      </div>
+      {/* Level slider — hidden when building overlay owns it */}
+      {mode !== 'building' && <LevelSlider level={level} onChange={setLevel} />}
     </main>
   );
 }
