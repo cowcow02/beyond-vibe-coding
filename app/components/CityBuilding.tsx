@@ -44,8 +44,11 @@ export function CityBuilding({
     district.originCol + building.col,
     district.originRow + building.row,
   );
-  const wx = worldX ?? tileX;
-  const wz = worldZ ?? tileZ;
+  // tileToWorld returns the top-left corner of a tile; tile-based buildings
+  // need +TILE_SIZE/2 to center. worldX/worldZ from the generator are already
+  // center positions, so don't add the offset in that case.
+  const wx = worldX !== undefined ? worldX : tileX + TILE_SIZE / 2;
+  const wz = worldZ !== undefined ? worldZ : tileZ + TILE_SIZE / 2;
 
   const numFloors = Math.min(level + 1, 6);
 
@@ -149,7 +152,7 @@ export function CityBuilding({
 
   return (
     <group
-      position={[wx + TILE_SIZE / 2, 0, wz + TILE_SIZE / 2]}
+      position={[wx, 0, wz]}
       rotation={[0, rotY, 0]}
       onClick={(e) => { e.stopPropagation(); onBuildingClick(district.id, building.id); }}
       onPointerEnter={() => { document.body.style.cursor = 'pointer'; }}
