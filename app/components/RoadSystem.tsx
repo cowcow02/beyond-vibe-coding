@@ -35,32 +35,43 @@ const EPS = 0.01;
 //   sx=-1 sz=+1 → SW outer corner  sx=+1 sz=+1 → SE outer corner
 
 function makeCornerShape(sx: number, sz: number): THREE.Shape {
-  const R      = ROAD_HALF;            // inner arc radius
-  const outerR = ROAD_HALF + SIDEWALK_W;  // outer radius = 1.65
+  // sx/sz are in SHAPE space.  rotation={[-π/2,0,0]} maps shape_Y → -world_Z,
+  // so sz_shape = -sz_world.  Caller must pass corrected values.
+  const R      = ROAD_HALF;
+  const outerR = ROAD_HALF + SIDEWALK_W;
 
-  // Shape in XY plane (will be rotated -π/2 around X to lie flat in XZ).
-  // Traces the outer boundary of the sidewalk corner then the rounded inner arc.
+  // Shape in XY plane (rotated -π/2 around X to lie flat in XZ).
+  // Annular sector: rounded OUTER arc + rounded INNER arc.
   const shape = new THREE.Shape();
-  shape.moveTo(sx * outerR, 0);          // along the axis-parallel sidewalk strip
-  shape.lineTo(sx * outerR, sz * outerR); // outer corner point
-  shape.lineTo(0, sz * outerR);           // back along the other sidewalk strip
-  shape.lineTo(0, sz * R);               // step in to inner arc start
+  shape.moveTo(sx * outerR, 0);
 
-  // Quarter-circle arc from (0, sz*R) to (sx*R, 0)
-  const startAngle = sz < 0 ? -Math.PI / 2 : Math.PI / 2;
-  const endAngle   = sx < 0 ?  Math.PI    : 0;
-  const clockwise  = sx * sz > 0;
-  shape.absarc(0, 0, R, startAngle, endAngle, clockwise);
+  // Rounded outer arc: (sx*outerR, 0) → (0, sz*outerR)
+  const outerStart = sx < 0 ? Math.PI : 0;
+  const outerEnd   = sz > 0 ? Math.PI / 2 : -Math.PI / 2;
+  const outerCW    = sx * sz < 0;
+  shape.absarc(0, 0, outerR, outerStart, outerEnd, outerCW);
+
+  // Step in to inner arc start
+  shape.lineTo(0, sz * R);
+
+  // Rounded inner arc: (0, sz*R) → (sx*R, 0)
+  const innerStart = sz > 0 ? Math.PI / 2 : -Math.PI / 2;
+  const innerEnd   = sx < 0 ? Math.PI : 0;
+  const innerCW    = sx * sz > 0;
+  shape.absarc(0, 0, R, innerStart, innerEnd, innerCW);
 
   shape.closePath(); // line from (sx*R, 0) back to (sx*outerR, 0)
   return shape;
 }
 
+// World direction → shape sz is NEGATED (shape_Y = -world_Z after rotation).
+// world NW (-X,-Z): shape(-1,+1)   world NE (+X,-Z): shape(+1,+1)
+// world SW (-X,+Z): shape(-1,-1)   world SE (+X,+Z): shape(+1,-1)
 const CORNER_SHAPES = {
-  NW: makeCornerShape(-1, -1),
-  NE: makeCornerShape(+1, -1),
-  SW: makeCornerShape(-1, +1),
-  SE: makeCornerShape(+1, +1),
+  NW: makeCornerShape(-1, +1),
+  NE: makeCornerShape(+1, +1),
+  SW: makeCornerShape(-1, -1),
+  SE: makeCornerShape(+1, -1),
 } as const;
 
 // ── Sidewalk gap-filler helpers ────────────────────────────────────────────────
