@@ -65,8 +65,11 @@ export function DistrictStrip({ districtId, level, onBack }: Props) {
         </span>
 
         {/* Count */}
-        <span className="font-mono text-[10px] text-slate-500 shrink-0 ml-auto">
+        <span className="hidden sm:inline font-mono text-[10px] text-slate-500 shrink-0 ml-auto">
           {district.buildings.length} buildings · unlocked at L{district.appearsAtLevel}
+        </span>
+        <span className="sm:hidden font-mono text-[10px] text-slate-500 shrink-0 ml-auto">
+          {district.buildings.length} bldgs
         </span>
       </div>
     </div>

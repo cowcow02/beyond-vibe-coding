@@ -30,6 +30,8 @@ function CameraRig({
   const dirty      = useRef(false);
 
   useEffect(() => {
+    const isPortrait = size.height > size.width;
+
     if (focusedBlock) {
       const cx = focusedBlock.x + focusedBlock.width  / 2;
       const cz = focusedBlock.z + focusedBlock.depth  / 2;
@@ -39,7 +41,7 @@ function CameraRig({
       const spanZ = focusedBlock.depth  + 6;
       const screenW = (spanX + spanZ) / Math.SQRT2;
       const screenH = (spanX + spanZ) / Math.sqrt(6);
-      const PADDING = 1.6;
+      const PADDING = isPortrait ? 1.1 : 1.6;
       targetZoom.current = Math.min(
         size.width  / (screenW * PADDING),
         size.height / (screenH * PADDING),
@@ -58,7 +60,7 @@ function CameraRig({
       const spanZ = maxZ - minZ;
       const screenW = (spanX + spanZ) / Math.SQRT2;
       const screenH = (spanX + spanZ) / Math.sqrt(6);
-      const PADDING = 1.35;
+      const PADDING = isPortrait ? 0.9 : 1.35;
       targetZoom.current = Math.min(
         size.width  / (screenW * PADDING),
         size.height / (screenH * PADDING),

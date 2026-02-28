@@ -18,7 +18,7 @@ function SliderTrack({ level, onChange }: { level: number; onChange: (l: number)
           <button
             key={l}
             onClick={() => onChange(l)}
-            className="flex-1 flex flex-col items-center gap-1 group"
+            className="flex-1 flex flex-col items-center gap-1 group py-2"
           >
             <div className="w-full flex items-center">
               {l > 0 && (
@@ -26,7 +26,7 @@ function SliderTrack({ level, onChange }: { level: number; onChange: (l: number)
                   l <= level ? 'bg-amber-500' : 'bg-slate-700'
                 }`} />
               )}
-              <div className={`w-2.5 h-2.5 rounded-full border-2 transition-all duration-300 ${
+              <div className={`w-3 h-3 rounded-full border-2 transition-all duration-300 ${
                 l === level
                   ? 'border-amber-400 bg-amber-400 scale-150 shadow-[0_0_8px_rgba(251,191,36,0.7)]'
                   : l < level
@@ -47,7 +47,7 @@ function SliderTrack({ level, onChange }: { level: number; onChange: (l: number)
           </button>
         ))}
       </div>
-      <div className="flex justify-between w-full mt-0.5 px-0.5">
+      <div className="flex justify-between w-full px-0.5">
         <span className="font-mono text-[9px] text-slate-600">Vibe Coder</span>
         <span className="font-mono text-[9px] text-slate-600">Expert Leader</span>
       </div>
@@ -78,8 +78,18 @@ export default function LevelSlider({ level, onChange, className }: Props) {
         borderTop: '1px solid rgba(51,65,85,0.35)',
       }}
     >
-      <div className="flex items-center gap-8 px-8 py-4 max-w-6xl mx-auto">
+      {/* ── Mobile layout ─────────────────────────────────────────────── */}
+      <div className="sm:hidden flex flex-col items-center px-5 pt-2 pb-3">
+        <div className="font-mono text-[10px] font-bold tracking-[0.15em] text-amber-300 uppercase mb-2">
+          L{level} · {title}
+        </div>
+        <div className="w-full">
+          <SliderTrack level={level} onChange={onChange} />
+        </div>
+      </div>
 
+      {/* ── Desktop layout ────────────────────────────────────────────── */}
+      <div className="hidden sm:flex items-center gap-8 px-8 py-4 max-w-6xl mx-auto">
         {/* Brand */}
         <div className="shrink-0 w-40">
           <div className="font-mono text-[11px] font-bold tracking-[0.18em] text-amber-300 uppercase">
@@ -90,7 +100,6 @@ export default function LevelSlider({ level, onChange, className }: Props) {
           </div>
         </div>
 
-        {/* Divider */}
         <div className="w-px self-stretch bg-slate-800 shrink-0" />
 
         {/* Slider */}
@@ -98,7 +107,6 @@ export default function LevelSlider({ level, onChange, className }: Props) {
           <SliderTrack level={level} onChange={onChange} />
         </div>
 
-        {/* Divider */}
         <div className="w-px self-stretch bg-slate-800 shrink-0" />
 
         {/* Level info */}
@@ -108,7 +116,6 @@ export default function LevelSlider({ level, onChange, className }: Props) {
           </div>
           <div className="font-mono text-[9px] text-slate-500 mt-0.5">{tagline}</div>
         </div>
-
       </div>
     </div>
   );
