@@ -56,8 +56,8 @@ export const districts: District[] = [
     name: 'Frontend',
     type: 'technical',
     appearsAtLevel: 0,
-    originCol: 2, originRow: 2,
-    cols: 5, rows: 4,
+    originCol: 3, originRow: 2,
+    cols: 8, rows: 5,
     buildings: [
       {
         id: 'html-css', name: 'HTML & CSS', col: 0, row: 0,
@@ -71,7 +71,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'javascript', name: 'JavaScript', col: 2, row: 0,
+        id: 'javascript', name: 'JavaScript', col: 3, row: 0,
         floors: makeFloors([
           { skills: ['Copy-paste snippets', 'console.log debugging'] },
           { skills: ['Variables, loops, functions', 'DOM manipulation', 'Events'] },
@@ -82,7 +82,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'typescript', name: 'TypeScript', col: 4, row: 0,
+        id: 'typescript', name: 'TypeScript', col: 6, row: 0,
         floors: makeFloors([
           { skills: ['Accept AI-typed code', 'Ignore type errors'] },
           { skills: ['Basic types', 'Interfaces', 'Type annotations'] },
@@ -93,7 +93,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'react', name: 'React / Vue', col: 1, row: 2,
+        id: 'react', name: 'React / Vue', col: 1, row: 3,
         floors: makeFloors([
           { skills: ['Use AI-generated components', 'Basic JSX edits'] },
           { skills: ['Components, props, state', 'Event handling', 'Lists & keys'] },
@@ -104,7 +104,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'build-tools', name: 'Build Tools', col: 3, row: 2,
+        id: 'build-tools', name: 'Build Tools', col: 5, row: 3,
         floors: makeFloors([
           { skills: ['Run npm start', 'Follow setup instructions'] },
           { skills: ['npm scripts', 'Basic Webpack/Vite config', 'Env variables'] },
@@ -122,8 +122,8 @@ export const districts: District[] = [
     name: 'Backend & APIs',
     type: 'technical',
     appearsAtLevel: 0,
-    originCol: 9, originRow: 2,
-    cols: 5, rows: 4,
+    originCol: 13, originRow: 2,
+    cols: 6, rows: 5,
     buildings: [
       {
         id: 'rest-apis', name: 'REST APIs', col: 0, row: 0,
@@ -137,7 +137,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'server-runtime', name: 'Server Runtime', col: 2, row: 0,
+        id: 'server-runtime', name: 'Server Runtime', col: 3, row: 0,
         floors: makeFloors([
           { skills: ['Run AI-generated server code', 'npm start'] },
           { skills: ['Node.js basics', 'Express routing', 'Environment config'] },
@@ -148,7 +148,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'auth', name: 'Auth & Identity', col: 4, row: 0,
+        id: 'auth', name: 'Auth & Identity', col: 5, row: 1,
         floors: makeFloors([
           { skills: ['Paste AI auth boilerplate', 'Basic login form'] },
           { skills: ['Sessions vs JWT', 'Password hashing', 'Basic OAuth flow'] },
@@ -159,7 +159,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'queues', name: 'Message Queues', col: 1, row: 2,
+        id: 'queues', name: 'Message Queues', col: 2, row: 3,
         floors: makeFloors([
           { skills: ['Use AI-generated queue code'] },
           { skills: ['Producer/consumer model', 'Basic queue setup'] },
@@ -178,8 +178,8 @@ export const districts: District[] = [
     name: 'Databases',
     type: 'technical',
     appearsAtLevel: 1,
-    originCol: 2, originRow: 8,
-    cols: 5, rows: 4,
+    originCol: 2, originRow: 9,
+    cols: 7, rows: 5,
     buildings: [
       {
         id: 'sql', name: 'SQL', col: 0, row: 0,
@@ -193,7 +193,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'nosql', name: 'NoSQL', col: 2, row: 0,
+        id: 'nosql', name: 'NoSQL', col: 3, row: 0,
         floors: makeFloors([
           { skills: ['Use AI to set up MongoDB/Redis'] },
           { skills: ['Document model', 'Key-value stores', 'Basic CRUD'] },
@@ -204,7 +204,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'schema-design', name: 'Schema Design', col: 4, row: 0,
+        id: 'schema-design', name: 'Schema Design', col: 5, row: 2,
         floors: makeFloors([
           { skills: ['Accept AI-generated schemas'] },
           { skills: ['Normalisation basics', '1NF/2NF/3NF', 'Foreign keys'] },
@@ -223,8 +223,8 @@ export const districts: District[] = [
     name: 'DevOps',
     type: 'technical',
     appearsAtLevel: 2,
-    originCol: 9, originRow: 8,
-    cols: 5, rows: 4,
+    originCol: 13, originRow: 9,
+    cols: 6, rows: 5,
     buildings: [
       {
         id: 'docker', name: 'Containers', col: 0, row: 0,
@@ -238,7 +238,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'cicd', name: 'CI / CD', col: 2, row: 0,
+        id: 'cicd', name: 'CI / CD', col: 3, row: 0,
         floors: makeFloors([
           { skills: ['Push and hope', 'Follow existing CI config'] },
           { skills: ['GitHub Actions basics', 'Lint + test in CI', 'Secrets'] },
@@ -249,7 +249,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'monitoring', name: 'Monitoring', col: 4, row: 0,
+        id: 'monitoring', name: 'Monitoring', col: 4, row: 3,
         floors: makeFloors([
           { skills: ['Check logs when broken'] },
           { skills: ['Log levels', 'Basic dashboards', 'Uptime checks'] },
@@ -267,8 +267,8 @@ export const districts: District[] = [
     name: 'Testing & QA',
     type: 'technical',
     appearsAtLevel: 2,
-    originCol: 2, originRow: 14,
-    cols: 5, rows: 4,
+    originCol: 2, originRow: 16,
+    cols: 6, rows: 4,
     buildings: [
       {
         id: 'unit-testing', name: 'Unit Testing', col: 0, row: 0,
@@ -282,7 +282,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'integration-testing', name: 'Integration', col: 2, row: 0,
+        id: 'integration-testing', name: 'Integration', col: 3, row: 0,
         floors: makeFloors([
           { skills: ['Manual testing only'] },
           { skills: ['API testing (Postman/curl)', 'Basic DB integration tests'] },
@@ -293,7 +293,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'e2e', name: 'E2E Testing', col: 4, row: 0,
+        id: 'e2e', name: 'E2E Testing', col: 4, row: 2,
         floors: makeFloors([
           { skills: ['Click through manually'] },
           { skills: ['Playwright/Cypress basics', 'Record & replay'] },
@@ -312,8 +312,8 @@ export const districts: District[] = [
     name: 'Security',
     type: 'technical',
     appearsAtLevel: 3,
-    originCol: 9, originRow: 14,
-    cols: 5, rows: 4,
+    originCol: 10, originRow: 15,
+    cols: 5, rows: 5,
     buildings: [
       {
         id: 'owasp', name: 'OWASP Top 10', col: 0, row: 0,
@@ -327,7 +327,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'secrets', name: 'Secrets Mgmt', col: 2, row: 0,
+        id: 'secrets', name: 'Secrets Mgmt', col: 3, row: 2,
         floors: makeFloors([
           { skills: ['Hardcode secrets in code'] },
           { skills: ['.env files', 'Basic secret rotation', 'Never commit secrets'] },
@@ -345,11 +345,11 @@ export const districts: District[] = [
     name: 'System Design',
     type: 'technical',
     appearsAtLevel: 3,
-    originCol: 16, originRow: 2,
-    cols: 5, rows: 4,
+    originCol: 21, originRow: 1,
+    cols: 5, rows: 6,
     buildings: [
       {
-        id: 'distributed', name: 'Distributed Systems', col: 0, row: 0,
+        id: 'distributed', name: 'Distributed Systems', col: 0, row: 1,
         floors: makeFloors([
           { skills: ['Follow existing architecture'] },
           { skills: ['Client-server model', 'Load balancers', 'CDNs'] },
@@ -360,7 +360,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'microservices', name: 'Microservices', col: 2, row: 0,
+        id: 'microservices', name: 'Microservices', col: 3, row: 3,
         floors: makeFloors([
           { skills: ['Use existing microservices'] },
           { skills: ['Service boundaries', 'REST communication', 'Basic service mesh'] },
@@ -379,7 +379,7 @@ export const districts: District[] = [
     name: 'Performance',
     type: 'technical',
     appearsAtLevel: 4,
-    originCol: 16, originRow: 8,
+    originCol: 21, originRow: 9,
     cols: 5, rows: 4,
     buildings: [
       {
@@ -394,7 +394,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'caching', name: 'Caching', col: 2, row: 0,
+        id: 'caching', name: 'Caching', col: 3, row: 1,
         floors: makeFloors([
           { skills: ['Unaware of caching'] },
           { skills: ['Browser cache', 'Cache-Control headers', 'CDN basics'] },
@@ -413,8 +413,8 @@ export const districts: District[] = [
     name: 'Engineering Leadership',
     type: 'non-technical',
     appearsAtLevel: 5,
-    originCol: 16, originRow: 14,
-    cols: 6, rows: 4,
+    originCol: 17, originRow: 18,
+    cols: 7, rows: 4,
     buildings: [
       {
         id: 'mentoring', name: 'Mentoring', col: 0, row: 0,
@@ -428,7 +428,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'tech-strategy', name: 'Tech Strategy', col: 2, row: 0,
+        id: 'tech-strategy', name: 'Tech Strategy', col: 3, row: 0,
         floors: makeFloors([
           { skills: ['Follow existing strategy'] },
           { skills: ['Understand roadmap', 'Contribute to tech planning'] },
@@ -439,7 +439,7 @@ export const districts: District[] = [
         ]),
       },
       {
-        id: 'communication', name: 'Communication', col: 4, row: 0,
+        id: 'communication', name: 'Communication', col: 5, row: 1,
         floors: makeFloors([
           { skills: ['Struggle to explain technical decisions'] },
           { skills: ['Write clear PRs', 'Basic technical docs', 'Team standups'] },
