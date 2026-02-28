@@ -1,181 +1,151 @@
 // app/components/CityPedestrians.tsx
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import type { GeneratedSegment } from '../lib/cityLayoutGenerator';
 
-import type { BlockLayout } from '../lib/cityLayoutGenerator';
+const ROAD_W      = 2.5;
+const SW_OFFSET   = ROAD_W / 2 + 0.2;   // center of sidewalk strip from road center
+const MAX_PEDS    = 8;
+const SPAWN_DELAY = 1.8;                 // seconds between each ped appearing
 
-interface Props {
-  blocks: BlockLayout[];
+const PED_COLORS = [
+  '#5090c0', '#30a060', '#7060a0', '#c06030',
+  '#c04060', '#2870b0', '#c08030', '#a040c0',
+];
+
+interface SidewalkLane {
+  axis:      'x' | 'z';
+  roadCoord: number;   // fixed coord perpendicular to travel (x for z-roads, z for x-roads)
+  side:      1 | -1;  // which side of the road
+  minAlong:  number;
+  maxAlong:  number;
 }
 
 interface PedState {
-  x: number; z: number;
-  tx: number; tz: number;      // walk target
-  speed: number;
-  scale: number;               // 0→1 for enter/exit animation
-  behavior: 'walking' | 'entering' | 'inside' | 'leaving';
-  timer: number;
-  insideDuration: number;
-  bobPhase: number;
-  isVisitor: boolean;
-  // entrance position for visitor
-  entrX: number; entrZ: number;
-  // walk bounds
-  minX: number; maxX: number;
-  minZ: number; maxZ: number;
+  lane:      SidewalkLane;
+  along:     number;
+  dir:       1 | -1;
+  speed:     number;
+  spawnAt:   number;   // clock time when this ped should appear
+  scale:     number;
+  bobPhase:  number;
 }
 
+interface Props {
+  segments: GeneratedSegment[];
+}
 
-// Muted accent colors per district
-const PED_COLORS = [
-  '#5090c0', '#30a060', '#7060a0', '#c06030',
-  '#c04060', '#c04040', '#2870b0', '#c08030', '#a040c0',
-];
+export function CityPedestrians({ segments }: Props) {
+  const groupRefs = useRef<(THREE.Group | null)[]>(Array(MAX_PEDS).fill(null));
+  const clockRef  = useRef(0);
 
-export function CityPedestrians({ blocks }: Props) {
-  const bodyRefs  = useRef<(THREE.Mesh | null)[]>([]);
-  const headRefs  = useRef<(THREE.Mesh | null)[]>([]);
-  const groupRefs = useRef<(THREE.Group | null)[]>([]);
+  // Build one sidewalk lane per side of each road segment
+  const lanes = useMemo<SidewalkLane[]>(() => {
+    const result: SidewalkLane[] = [];
+    for (const seg of segments) {
+      if (seg.axis === 'z') {
+        const minZ = Math.min(seg.z1, seg.z2);
+        const maxZ = Math.max(seg.z1, seg.z2);
+        if (maxZ - minZ < 1) continue;
+        result.push({ axis: 'z', roadCoord: seg.x1, side:  1, minAlong: minZ, maxAlong: maxZ });
+        result.push({ axis: 'z', roadCoord: seg.x1, side: -1, minAlong: minZ, maxAlong: maxZ });
+      } else {
+        const minX = Math.min(seg.x1, seg.x2);
+        const maxX = Math.max(seg.x1, seg.x2);
+        if (maxX - minX < 1) continue;
+        result.push({ axis: 'x', roadCoord: seg.z1, side:  1, minAlong: minX, maxAlong: maxX });
+        result.push({ axis: 'x', roadCoord: seg.z1, side: -1, minAlong: minX, maxAlong: maxX });
+      }
+    }
+    return result;
+  }, [segments]);
 
-  // Build sidewalk areas from block road-facing edges
-  const sidewalkAreas = blocks.flatMap(block => {
-    const areas: { xMin: number; xMax: number; zMin: number; zMax: number; entr: [number, number] }[] = [];
-    const sw = 1.5; // sidewalk strip half-width
-    if (block.roadEdges.includes('north'))
-      areas.push({ xMin: block.x, xMax: block.x + block.width, zMin: block.z - sw, zMax: block.z + sw, entr: [block.x + block.width / 2, block.z] });
-    if (block.roadEdges.includes('south'))
-      areas.push({ xMin: block.x, xMax: block.x + block.width, zMin: block.z + block.depth - sw, zMax: block.z + block.depth + sw, entr: [block.x + block.width / 2, block.z + block.depth] });
-    if (block.roadEdges.includes('west'))
-      areas.push({ xMin: block.x - sw, xMax: block.x + sw, zMin: block.z, zMax: block.z + block.depth, entr: [block.x, block.z + block.depth / 2] });
-    if (block.roadEdges.includes('east'))
-      areas.push({ xMin: block.x + block.width - sw, xMax: block.x + block.width + sw, zMin: block.z, zMax: block.z + block.depth, entr: [block.x + block.width, block.z + block.depth / 2] });
-    return areas;
-  });
-
-  // Fallback: if no blocks provided yet, use an empty area to avoid crashes
-  const areas = sidewalkAreas.length > 0 ? sidewalkAreas : [{ xMin: 0, xMax: 1, zMin: 0, zMax: 1, entr: [0.5, 0.5] as [number, number] }];
+  // Reset clock when lanes change so staggered spawn restarts
+  useEffect(() => { clockRef.current = 0; }, [lanes]);
 
   const peds = useMemo<PedState[]>(() => {
-    return Array.from({ length: 24 }, (_, i) => {
-      const area = areas[i % areas.length];
-      const x = area.xMin + Math.random() * (area.xMax - area.xMin);
-      const z = area.zMin + Math.random() * (area.zMax - area.zMin);
-      const isVisitor = i % 3 === 0; // every 3rd ped is a visitor
+    if (lanes.length === 0) return [];
+    return Array.from({ length: MAX_PEDS }, (_, i) => {
+      const lane  = lanes[i % lanes.length];
+      const along = lane.minAlong + Math.random() * (lane.maxAlong - lane.minAlong);
       return {
-        x, z,
-        tx: x + (Math.random() - 0.5) * 4,
-        tz: z + (Math.random() - 0.5) * 0.3,
-        speed: 0.35 + Math.random() * 0.35,
-        scale: 1,
-        behavior: 'walking',
-        timer: Math.random() * 5,
-        insideDuration: 2 + Math.random() * 6,
+        lane,
+        along,
+        dir:      (Math.random() < 0.5 ? 1 : -1) as 1 | -1,
+        speed:    0.7 + Math.random() * 0.5,
+        spawnAt:  i * SPAWN_DELAY,
+        scale:    0,
         bobPhase: Math.random() * Math.PI * 2,
-        isVisitor,
-        entrX: area.entr[0],
-        entrZ: area.entr[1],
-        minX: area.xMin + 0.5,
-        maxX: area.xMax - 0.5,
-        minZ: area.zMin,
-        maxZ: area.zMax,
       };
     });
-  }, [blocks]);
+  }, [lanes]);
 
-  useFrame(({ clock }, delta) => {
-    const time = clock.elapsedTime;
+  useFrame((state, delta) => {
+    clockRef.current += delta;
+    const t = clockRef.current;
 
     peds.forEach((ped, i) => {
       const group = groupRefs.current[i];
       if (!group) return;
 
-      if (ped.behavior === 'walking') {
-        // Move toward target
-        const dx = ped.tx - ped.x;
-        const dz = ped.tz - ped.z;
-        const dist = Math.sqrt(dx * dx + dz * dz);
+      // Not spawned yet
+      if (t < ped.spawnAt) {
+        group.visible = false;
+        return;
+      }
 
-        if (dist < 0.1) {
-          // Pick new target within bounds
-          ped.tx = ped.minX + Math.random() * (ped.maxX - ped.minX);
-          ped.tz = ped.minZ + Math.random() * (ped.maxZ - ped.minZ);
+      group.visible = true;
 
-          // Visitors: sometimes go to entrance
-          if (ped.isVisitor && Math.random() < 0.3) {
-            ped.tx = ped.entrX + (Math.random() - 0.5) * 0.5;
-            ped.tz = ped.entrZ;
-            ped.behavior = 'walking'; // will trigger 'entering' when close to entrance
-          }
-        } else {
-          ped.x += (dx / dist) * ped.speed * delta;
-          ped.z += (dz / dist) * ped.speed * delta;
-        }
-
-        // Check if visitor near entrance
-        if (ped.isVisitor) {
-          const de = Math.sqrt((ped.x - ped.entrX) ** 2 + (ped.z - ped.entrZ) ** 2);
-          if (de < 0.4) {
-            ped.behavior = 'entering';
-            ped.timer = 0;
-          }
-        }
-
-        const bob = Math.sin(time * 6 + ped.bobPhase) * 0.015;
-        group.position.set(ped.x, 0.15 + bob, ped.z);
-        group.scale.setScalar(ped.scale);
-
-      } else if (ped.behavior === 'entering') {
-        ped.scale = Math.max(0, ped.scale - delta * 2.5);
-        group.scale.setScalar(ped.scale);
-        if (ped.scale <= 0) {
-          ped.behavior = 'inside';
-          ped.timer = 0;
-        }
-
-      } else if (ped.behavior === 'inside') {
-        group.scale.setScalar(0);
-        ped.timer += delta;
-        if (ped.timer >= ped.insideDuration) {
-          ped.behavior = 'leaving';
-          ped.scale = 0;
-          // Reappear at entrance
-          ped.x = ped.entrX + (Math.random() - 0.5) * 0.3;
-          ped.z = ped.entrZ;
-          group.position.set(ped.x, 0.15, ped.z);
-        }
-
-      } else if (ped.behavior === 'leaving') {
+      // Scale up on first appearance
+      if (ped.scale < 1) {
         ped.scale = Math.min(1, ped.scale + delta * 2.5);
         group.scale.setScalar(ped.scale);
-        if (ped.scale >= 1) {
-          ped.behavior = 'walking';
-          ped.tx = ped.minX + Math.random() * (ped.maxX - ped.minX);
-          ped.tz = ped.minZ + Math.random() * (ped.maxZ - ped.minZ);
-        }
+      }
+
+      // Walk along lane, bounce at ends
+      ped.along += ped.dir * ped.speed * delta;
+      if (ped.along >= ped.lane.maxAlong - 0.5) {
+        ped.along = ped.lane.maxAlong - 0.5;
+        ped.dir = -1;
+      } else if (ped.along <= ped.lane.minAlong + 0.5) {
+        ped.along = ped.lane.minAlong + 0.5;
+        ped.dir = 1;
+      }
+
+      // World position: fixed coord ± SW_OFFSET, varying along lane
+      const sw  = ped.lane.roadCoord + ped.lane.side * SW_OFFSET;
+      const bob = Math.sin(t * 6 + ped.bobPhase) * 0.015;
+
+      if (ped.lane.axis === 'z') {
+        group.position.set(sw, 0.15 + bob, ped.along);
+        group.rotation.y = ped.dir > 0 ? 0 : Math.PI;
+      } else {
+        group.position.set(ped.along, 0.15 + bob, sw);
+        group.rotation.y = ped.dir > 0 ? -Math.PI / 2 : Math.PI / 2;
       }
     });
   });
 
   return (
     <group>
-      {peds.map((ped, i) => {
+      {peds.map((_, i) => {
         const color = PED_COLORS[i % PED_COLORS.length];
         return (
           <group
             key={i}
             ref={el => { groupRefs.current[i] = el; }}
-            position={[ped.x, 0.15, ped.z]}
+            visible={false}
           >
             {/* Body */}
-            <mesh ref={el => { bodyRefs.current[i] = el; }} position={[0, 0, 0]}>
+            <mesh position={[0, 0, 0]}>
               <cylinderGeometry args={[0.055, 0.065, 0.22, 6]} />
               <meshLambertMaterial color={color} />
             </mesh>
             {/* Head */}
-            <mesh ref={el => { headRefs.current[i] = el; }} position={[0, 0.17, 0]}>
+            <mesh position={[0, 0.17, 0]}>
               <sphereGeometry args={[0.09, 6, 6]} />
               <meshLambertMaterial color={color} />
             </mesh>

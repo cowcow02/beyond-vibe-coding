@@ -5,7 +5,7 @@ import { useEffect, useRef, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import type * as THREE from 'three';
 import { districts } from '../data/city';
-import { generateLayout, type GeneratedLayout, type BlockLayout } from '../lib/cityLayoutGenerator';
+import { generateLayout, type GeneratedLayout, type BlockLayout, type GeneratedSegment } from '../lib/cityLayoutGenerator';
 import { DistrictGround } from './DistrictGround';
 import { CityBuilding } from './CityBuilding';
 import { RoadSystem } from './RoadSystem';
@@ -129,10 +129,10 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
       {/* Auto-zoom to fit active districts */}
       <AutoZoom activeBlocks={activeBlocks} />
 
-      {/* Global asphalt base — lighter daytime color */}
+      {/* Ground base — warm milky stone */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
         <planeGeometry args={[300, 300]} />
-        <meshLambertMaterial color="#2a3f52" />
+        <meshLambertMaterial color="#c2b9ad" />
       </mesh>
 
       {/* Road system */}
@@ -193,8 +193,8 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
       {/* Traffic */}
       <CityTraffic segments={activeSegments} />
 
-      {/* Pedestrians — only on sidewalks of unlocked districts */}
-      <CityPedestrians blocks={activeBlocks} />
+      {/* Pedestrians — walk on active road sidewalks */}
+      <CityPedestrians segments={activeSegments} />
     </group>
   );
 }
