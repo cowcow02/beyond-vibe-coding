@@ -24,27 +24,32 @@ interface PedState {
 
 // District sidewalk areas (raw world coords, inside city group)
 const SIDEWALK_AREAS = [
-  // frontend district sidewalks
-  { minX: 4,  maxX: 14, minZ: 3.2, maxZ: 3.8, entr: [7,  4  ] },
-  { minX: 4,  maxX: 14, minZ: 12.2,maxZ: 12.8,entr: [11, 12 ] },
-  // backend
-  { minX: 18, maxX: 28, minZ: 3.2, maxZ: 3.8, entr: [22, 4  ] },
-  { minX: 18, maxX: 28, minZ: 12.2,maxZ: 12.8,entr: [24, 12 ] },
-  // databases
-  { minX: 4,  maxX: 14, minZ: 15.2,maxZ: 15.8,entr: [8,  16 ] },
-  { minX: 4,  maxX: 14, minZ: 24.2,maxZ: 24.8,entr: [10, 24 ] },
-  // devops
-  { minX: 18, maxX: 28, minZ: 15.2,maxZ: 15.8,entr: [22, 16 ] },
-  // testing
-  { minX: 4,  maxX: 14, minZ: 27.2,maxZ: 27.8,entr: [8,  28 ] },
-  // security
-  { minX: 18, maxX: 28, minZ: 27.2,maxZ: 27.8,entr: [22, 28 ] },
-  // system-design
-  { minX: 32, maxX: 42, minZ: 3.2, maxZ: 3.8, entr: [36, 4  ] },
-  // performance
-  { minX: 32, maxX: 42, minZ: 15.2,maxZ: 15.8,entr: [36, 16 ] },
-  // leadership
-  { minX: 32, maxX: 44, minZ: 27.2,maxZ: 27.8,entr: [38, 28 ] },
+  // frontend — top edge sidewalk
+  { minX: 6,  maxX: 22, minZ: 3.2,  maxZ: 3.8,  entr: [12, 4]  },
+  // frontend — bottom edge sidewalk
+  { minX: 6,  maxX: 22, minZ: 14.2, maxZ: 14.8, entr: [14, 14] },
+  // backend — top edge
+  { minX: 26, maxX: 38, minZ: 3.2,  maxZ: 3.8,  entr: [32, 4]  },
+  // backend — bottom edge
+  { minX: 26, maxX: 38, minZ: 14.2, maxZ: 14.8, entr: [30, 14] },
+  // system-design — left sidewalk (N-S road B side)
+  { minX: 41.2, maxX: 41.8, minZ: 4, maxZ: 12,  entr: [42, 8]  },
+  // databases — top edge
+  { minX: 4,  maxX: 18, minZ: 17.2, maxZ: 17.8, entr: [10, 18] },
+  // databases — bottom edge
+  { minX: 4,  maxX: 18, minZ: 28.2, maxZ: 28.8, entr: [8,  28] },
+  // devops — top edge
+  { minX: 26, maxX: 38, minZ: 17.2, maxZ: 17.8, entr: [32, 18] },
+  // devops — bottom edge
+  { minX: 26, maxX: 38, minZ: 28.2, maxZ: 28.8, entr: [30, 28] },
+  // performance — left edge
+  { minX: 41.2, maxX: 41.8, minZ: 18, maxZ: 26, entr: [42, 22] },
+  // testing — top edge
+  { minX: 4,  maxX: 16, minZ: 31.2, maxZ: 31.8, entr: [8,  32] },
+  // security — top edge
+  { minX: 20, maxX: 30, minZ: 29.2, maxZ: 29.8, entr: [25, 30] },
+  // leadership — top edge
+  { minX: 34, maxX: 48, minZ: 35.2, maxZ: 35.8, entr: [40, 36] },
 ];
 
 // Muted accent colors per district

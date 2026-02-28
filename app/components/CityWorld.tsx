@@ -50,13 +50,13 @@ interface Props {
 }
 
 export function CityWorld({ level, onBuildingClick, selectedBuilding }: Props) {
-  const CITY_OFFSET_X = -24;
-  const CITY_OFFSET_Z = -20;
+  const CITY_OFFSET_X = -28;
+  const CITY_OFFSET_Z = -23;
 
   return (
     <group position={[CITY_OFFSET_X, 0, CITY_OFFSET_Z]}>
       {/* Global asphalt base — lighter daytime color */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[24, -0.05, 20]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[28, -0.05, 23]} receiveShadow>
         <planeGeometry args={[300, 300]} />
         <meshLambertMaterial color="#2a3f52" />
       </mesh>
