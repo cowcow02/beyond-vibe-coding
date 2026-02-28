@@ -1,7 +1,7 @@
 // app/page.tsx
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import CityCanvas from './components/CityCanvas';
 import { StoryScroll } from './components/StoryScroll';
@@ -17,8 +17,9 @@ export default function Home() {
   const [appMode, setAppMode] = useState<AppMode>('story');
 
   // Story state
-  const [storyLevel, setStoryLevel] = useState(-1);         // -1=hero, 0-5=levels
-  const [cityBrightness, setCityBrightness] = useState(0.2); // hero starts dim
+  const [storyLevel, setStoryLevel] = useState(5);           // hero shows final city
+  const [cityBrightness, setCityBrightness] = useState(0.4); // hero: visible but dim
+  const pendingLevelRef = useRef<number>(5);                 // level to apply on reveal
 
   // Sandbox state
   const [level,            setLevel]            = useState(5); // sandbox always starts at L5
@@ -35,15 +36,41 @@ export default function Home() {
   // --- Story handlers ---
 
   function handleSectionEnter(lvl: number) {
-    setStoryLevel(lvl);
-    if (lvl === -1) setCityBrightness(0.2); // hero
+    // Store the pending level — don't apply it yet.
+    // The city keeps showing the PREVIOUS level during the title card.
+    // storyLevel is only updated once the title has fully faded out (in handlePhaseChange).
+    if (lvl < 0) {
+      // Hero: show full city
+      pendingLevelRef.current = 5;
+      setStoryLevel(5);
+      setCityBrightness(0.4);
+    } else {
+      pendingLevelRef.current = lvl;
+    }
   }
 
   function handlePhaseChange(lvl: number, phase: string) {
-    if (phase === 'title')     setCityBrightness(0.2);  // dim during title card
-    if (phase === 'reveal')    setCityBrightness(1.0);  // full brightness for city expansion
-    if (phase === 'settle')    setCityBrightness(0.35); // dim to texture
-    if (phase === 'narrative') setCityBrightness(0.35); // stays dim during reading
+    if (phase === 'title') {
+      setCityBrightness(0.2); // dim the existing city during title card
+    }
+    if (phase === 'reveal') {
+      // Title overlay exit animation takes ~500ms — wait for it to finish,
+      // then apply the new level so buildings grow in on a clean screen.
+      setTimeout(() => {
+        const target = pendingLevelRef.current;
+        if (target === 0) {
+          // L0 after hero: briefly clear buildings so they spring in fresh
+          setStoryLevel(-1);
+          setCityBrightness(1.0);
+          setTimeout(() => setStoryLevel(0), 80);
+        } else {
+          setStoryLevel(target);
+          setCityBrightness(1.0);
+        }
+      }, 500);
+    }
+    if (phase === 'settle')    setCityBrightness(0.35);
+    if (phase === 'narrative') setCityBrightness(0.35);
   }
 
   function handleSandboxEnter() {
