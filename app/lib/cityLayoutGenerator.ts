@@ -71,17 +71,18 @@ function makePRNG(seed: number) {
 }
 
 // ─── Block size from building count ───────────────────────────────────────────
-// Buildings are placed on road-facing perimeter edges; we need at least
-// ceil(N/2) slots per main edge so all buildings fit on 2 edges minimum.
-// Block width = slots * spacing + side margins. No wasted empty space.
+// Buildings are distributed across all 4 edges, so size for ~ceil(N/4) per edge.
+// Ensures a compact block with minimal empty space.
 
 function blockWidthForN(n: number): number {
-  const slotsPerEdge = Math.ceil(n / 2);
-  return Math.max(slotsPerEdge * SLOT_SPACING + 2 * EDGE_INSET + 2.5, MIN_PARK + 2 * PERIMETER + 1);
+  const slotsPerEdge = Math.max(Math.ceil(n / 4), 2);
+  return Math.max(slotsPerEdge * SLOT_SPACING + 2 * EDGE_INSET + 2.0, MIN_PARK + 2 * PERIMETER + 1);
 }
 
 function blockDepthForN(n: number): number {
-  return blockWidthForN(n) * 0.88; // slightly rectangular
+  // Vary aspect ratio slightly per building count for organic feel
+  const ratio = 0.78 + (n % 3) * 0.08; // 0.78, 0.86, or 0.94
+  return blockWidthForN(n) * ratio;
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
@@ -230,7 +231,7 @@ export function generateLayout(districts: District[]): GeneratedLayout {
     const parkWidth  = Math.max(rb.width  - PERIMETER * 2, 1);
     const parkDepth  = Math.max(rb.depth  - PERIMETER * 2, 1);
 
-    const buildingSlots = placeBuildings(district, rb.x, rb.z, rb.width, rb.depth, rb.roadEdges);
+    const buildingSlots = placeBuildings(district, rb.x, rb.z, rb.width, rb.depth, rb.roadEdges, rng);
 
     return {
       districtId: district.id,
@@ -262,41 +263,63 @@ function placeBuildings(
   bx: number, bz: number,
   bw: number, bd: number,
   roadEdges: RoadEdge[],
+  rng: () => number,
 ): BuildingSlot[] {
-  const slots: BuildingSlot[] = [];
   const buildings = [...district.buildings];
-  let bi = 0;
+  const n = buildings.length;
+  if (n === 0) return [];
 
-  function edge(
-    facing: RoadEdge,
-    edgeLen: number,
-    startX: number, startZ: number,
-    horizontal: boolean,
-  ) {
-    if (bi >= buildings.length) return;
-    const count = Math.min(
-      Math.max(1, Math.floor(edgeLen / SLOT_SPACING)),
-      buildings.length - bi,
-    );
-    const spacing = edgeLen / (count + 1);
-    for (let i = 0; i < count && bi < buildings.length; i++) {
-      slots.push({
-        buildingId: buildings[bi++].id,
-        x: horizontal ? startX + spacing * (i + 1) : startX,
-        z: horizontal ? startZ : startZ + spacing * (i + 1),
-        facing,
-      });
-    }
+  // Fisher-Yates shuffle so building order across edges is random each load
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [buildings[i], buildings[j]] = [buildings[j], buildings[i]];
   }
 
-  // Road-facing edges first, then remaining edges for any leftover buildings
+  // Weighted random edge assignment: road-facing edges get 3× weight
   const allEdges: RoadEdge[] = ['north', 'south', 'east', 'west'];
-  const priority = [...roadEdges, ...allEdges.filter(e => !roadEdges.includes(e))];
-  for (const f of priority) {
-    if (f === 'north') edge('north', bw, bx, bz + EDGE_INSET,       true);
-    if (f === 'south') edge('south', bw, bx, bz + bd - EDGE_INSET,  true);
-    if (f === 'west')  edge('west',  bd, bx + EDGE_INSET,       bz, false);
-    if (f === 'east')  edge('east',  bd, bx + bw - EDGE_INSET,  bz, false);
+  const weights = allEdges.map(e => roadEdges.includes(e) ? 3 : 1);
+  const totalW  = weights.reduce((s, w) => s + w, 0);
+
+  const buckets: Record<RoadEdge, typeof buildings> = { north: [], south: [], east: [], west: [] };
+  for (const b of buildings) {
+    let r = rng() * totalW;
+    let chosen: RoadEdge = allEdges[0];
+    for (let i = 0; i < allEdges.length; i++) {
+      r -= weights[i];
+      if (r <= 0) { chosen = allEdges[i]; break; }
+    }
+    buckets[chosen].push(b);
   }
+
+  // Place buildings on each edge using zone-based random positioning
+  const slots: BuildingSlot[] = [];
+
+  function placeEdge(facing: RoadEdge, bs: typeof buildings) {
+    if (bs.length === 0) return;
+    const isH     = facing === 'north' || facing === 'south';
+    const edgeLen = isH ? bw : bd;
+    const zoneLen = edgeLen / (bs.length + 1);
+
+    bs.forEach((building, i) => {
+      // Random position within zone (±35% of zone size)
+      const along = zoneLen * (i + 1) + (rng() - 0.5) * zoneLen * 0.7;
+      // Slight inset variation (±25%) so buildings aren't all at same depth
+      const inset = EDGE_INSET * (0.75 + rng() * 0.5);
+
+      let x: number, z: number;
+      switch (facing) {
+        case 'north': x = bx + along;        z = bz + inset;          break;
+        case 'south': x = bx + along;        z = bz + bd - inset;     break;
+        case 'west':  x = bx + inset;        z = bz + along;          break;
+        default:      x = bx + bw - inset;   z = bz + along;          break; // east
+      }
+      // Clamp within block bounds with a small margin
+      x = Math.max(bx + 0.5, Math.min(bx + bw - 0.5, x));
+      z = Math.max(bz + 0.5, Math.min(bz + bd - 0.5, z));
+      slots.push({ buildingId: building.id, x, z, facing });
+    });
+  }
+
+  for (const e of allEdges) placeEdge(e, buckets[e]);
   return slots;
 }
