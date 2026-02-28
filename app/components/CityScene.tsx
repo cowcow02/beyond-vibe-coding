@@ -13,6 +13,7 @@ interface Props {
   mode: 'city' | 'district' | 'building';
   focusedDistrictId: string | null;
   onDistrictClick: (districtId: string) => void;
+  onBackToCity?: () => void;
 }
 
 const CAM_DISTANCE = 80;
@@ -29,7 +30,7 @@ function getIsometricPosition(): [number, number, number] {
   ];
 }
 
-export default function CityScene({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick }: Props) {
+export default function CityScene({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity }: Props) {
   const camPos = getIsometricPosition();
 
   return (
@@ -90,6 +91,7 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding, mo
         mode={mode}
         focusedDistrictId={focusedDistrictId}
         onDistrictClick={onDistrictClick}
+        onBackToCity={onBackToCity}
       />
     </Canvas>
   );

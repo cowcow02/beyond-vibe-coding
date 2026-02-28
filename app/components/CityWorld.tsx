@@ -136,9 +136,10 @@ interface Props {
   mode: 'city' | 'district' | 'building';
   focusedDistrictId: string | null;
   onDistrictClick: (districtId: string) => void;
+  onBackToCity?: () => void;
 }
 
-export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick }: Props) {
+export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity }: Props) {
   // Computed once on mount; Date.now() seed inside generates a unique layout each page load.
   const layout: GeneratedLayout = useMemo(() => generateLayout(districts), []);
 
@@ -169,8 +170,13 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focu
       {/* Camera rig — smooth pan + zoom to fit active/focused blocks */}
       <CameraRig activeBlocks={activeBlocks} focusedBlock={focusedBlock} />
 
-      {/* Ground base — warm milky stone */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
+      {/* Ground base — warm milky stone. Click outside district to go back to city. */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.05, 0]}
+        receiveShadow
+        onClick={() => { if (mode === 'district') onBackToCity?.(); }}
+      >
         <planeGeometry args={[300, 300]} />
         <meshLambertMaterial color="#c2b9ad" />
       </mesh>

@@ -65,6 +65,7 @@ export default function Home() {
         mode={mode}
         focusedDistrictId={focusedDistrict}
         onDistrictClick={handleDistrictClick}
+        onBackToCity={handleBackToCity}
       />
 
       {/* Title — hidden when building overlay is open */}

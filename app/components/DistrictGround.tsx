@@ -66,8 +66,12 @@ export function DistrictGround({ district, groundColor, accentColor, level, worl
 
   return (
     <group ref={groupRef} position={[cx, 0, cz]}>
-      {/* Ground slab */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      {/* Ground slab — stop propagation when focused so base-ground click-back doesn't fire */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        onClick={(e) => { if (isFocused) e.stopPropagation(); }}
+      >
         <planeGeometry args={[width, depth]} />
         <meshLambertMaterial color={groundColor} transparent opacity={opacityRef.current} />
       </mesh>
@@ -99,23 +103,37 @@ export function DistrictGround({ district, groundColor, accentColor, level, worl
             }}
           >
             <div style={{
-              fontFamily: 'monospace',
-              fontSize: '11px',
-              fontWeight: 'bold',
-              letterSpacing: '0.1em',
-              color: accentColor,
-              whiteSpace: 'nowrap',
-              textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+              background: 'rgba(2,6,23,0.72)',
+              border: `1px solid ${accentColor}55`,
+              borderRadius: '5px',
+              padding: '4px 10px 3px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1px',
             }}>
-              ● {district.name.toUpperCase()}
-            </div>
-            <div style={{
-              fontFamily: 'monospace',
-              fontSize: '9px',
-              color: 'rgba(200,200,200,0.7)',
-              whiteSpace: 'nowrap',
-            }}>
-              {district.buildings.length} buildings
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                letterSpacing: '0.1em',
+                color: '#ffffff',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+              }}>
+                <span style={{ color: accentColor, fontSize: '8px' }}>●</span>
+                {district.name.toUpperCase()}
+              </div>
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: '9px',
+                color: 'rgba(180,210,255,0.75)',
+                whiteSpace: 'nowrap',
+              }}>
+                {district.buildings.length} buildings
+              </div>
             </div>
           </div>
         </Html>
