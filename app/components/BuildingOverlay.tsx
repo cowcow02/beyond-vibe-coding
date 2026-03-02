@@ -17,6 +17,7 @@ interface Props {
   level: number;
   onLevelChange: (level: number) => void;
   onBack: () => void;
+  startAtDetail?: boolean;  // skip floor list, open directly on detail view
 }
 
 // ── Mini canvas: one building with slow auto-rotation ───────────────────────
@@ -121,10 +122,10 @@ function RotatingBuilding({
 
 // ── Main overlay ─────────────────────────────────────────────────────────────
 
-export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, onBack }: Props) {
+export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, onBack, startAtDetail = false }: Props) {
   const [selectedFloor, setSelectedFloor] = useState<number | null>(level);
   const [hoveredFloor,  setHoveredFloor]  = useState<number | null>(null);
-  const [showDetail,    setShowDetail]    = useState(false);
+  const [showDetail,    setShowDetail]    = useState(startAtDetail);
   const listRef = useRef<HTMLDivElement>(null);
 
   const district = districts.find(d => d.id === districtId);

@@ -224,6 +224,7 @@ export default function Home() {
           level={level}
           onLevelChange={appMode === 'sandbox' ? setLevel : () => {}}
           onBack={appMode === 'sandbox' ? handleBackToDistrict : handleBackToCity}
+          startAtDetail={appMode === 'explore'}
         />
       )}
 
