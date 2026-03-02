@@ -5,6 +5,7 @@ import { Canvas } from '@react-three/fiber';
 import { MapControls } from '@react-three/drei';
 import { CityWorld } from './CityWorld';
 import { SkyDome } from './SkyDome';
+import { ThumbnailCapture } from './ThumbnailCapture';
 
 interface Props {
   level: number;
@@ -111,6 +112,13 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding, mo
         focusedItemDistrictId={focusedItemDistrictId}
         focusedItemBuildingId={focusedItemBuildingId}
       />
+      {captureLevel != null && captureItems && captureItems.length > 0 && onThumbnailReady && (
+        <ThumbnailCapture
+          level={captureLevel}
+          items={captureItems}
+          onThumbnailReady={onThumbnailReady}
+        />
+      )}
     </Canvas>
     </div>
   );
