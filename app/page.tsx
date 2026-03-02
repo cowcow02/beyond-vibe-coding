@@ -60,7 +60,9 @@ export default function Home() {
   // --- Story handlers ---
 
   function handleSectionEnter(lvl: number) {
-    setStoryExploreLevel(null);   // reset explore mode on section change
+    // Only reset explore mode when navigating to a DIFFERENT section
+    // (IntersectionObserver can re-fire on the same section when scrollSnapType changes)
+    setStoryExploreLevel(prev => (prev != null && prev === lvl ? prev : null));
     if (lvl < 0) {
       // Hero: show full city
       pendingLevelRef.current = 5;
