@@ -41,8 +41,9 @@ export function getUnlocksForLevel(level: number, city: City): UnlockItem[] {
         });
       }
 
-      // New floor on a pre-existing building (building appeared before this level)
-      if (buildingAppearsAt < level && building.floorStartLevel === level) {
+      // New floor on a pre-existing building: building existed before this level
+      // and has floor content at this level (floors run from floorStartLevel to 5)
+      if (buildingAppearsAt < level && level >= building.floorStartLevel) {
         items.push({
           id: `floor:${building.id}:${level}`,
           type: 'floor',

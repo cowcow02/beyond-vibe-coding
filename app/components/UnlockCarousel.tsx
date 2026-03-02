@@ -15,10 +15,13 @@ interface Props {
   activeItemId: string | null;
   onItemClick: (item: UnlockItem) => void;
   bottomOffset?: number;             // shift up (e.g. to sit above a fixed slider)
+  nextLabel?: string;                // if set, shows a "Next →" button in the header
+  onNext?: () => void;
 }
 
 export function UnlockCarousel({
   level, items, thumbnails, accentColor, activeItemId, onItemClick, bottomOffset = 0,
+  nextLabel, onNext,
 }: Props) {
   const [minimized, setMinimized] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,8 +51,8 @@ export function UnlockCarousel({
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '8px 16px',
+        gap: 8,
+        padding: '8px 12px',
         borderBottom: minimized ? 'none' : '1px solid rgba(255,255,255,0.06)',
       }}>
         <span style={{
@@ -58,9 +61,29 @@ export function UnlockCarousel({
           fontWeight: 700,
           letterSpacing: '0.1em',
           color: accentColor,
+          flex: 1,
         }}>
-          L{level} · {labelData?.title?.toUpperCase()} · {items.length} things unlocked
+          L{level} · {labelData?.title?.toUpperCase()} · {items.length} unlocked
         </span>
+        {nextLabel && onNext && (
+          <button
+            onClick={onNext}
+            style={{
+              background: `${accentColor}18`,
+              border: `1px solid ${accentColor}55`,
+              borderRadius: 4,
+              cursor: 'pointer',
+              color: accentColor,
+              fontFamily: 'monospace',
+              fontSize: 11,
+              padding: '3px 10px',
+              letterSpacing: '0.06em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {nextLabel}
+          </button>
+        )}
         <button
           onClick={() => setMinimized(m => !m)}
           style={{
@@ -69,11 +92,12 @@ export function UnlockCarousel({
             cursor: 'pointer',
             color: '#64748b',
             fontFamily: 'monospace',
-            fontSize: 12,
-            padding: '2px 6px',
+            fontSize: 14,
+            padding: '2px 4px',
+            lineHeight: 1,
           }}
         >
-          {minimized ? '↑ show' : '↓ hide'}
+          {minimized ? '▲' : '▼'}
         </button>
       </div>
 

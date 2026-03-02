@@ -132,10 +132,8 @@ export default function Home() {
     setActiveItemId(item.id);
     setFocusedItemDistrictId(item.districtId);
     setFocusedItemBuildingId(item.buildingId ?? null);
-    // Building/floor items: open the detail overlay
-    if (item.buildingId && (item.type === 'building' || item.type === 'floor')) {
-      setStoryBuildingOverlay({ districtId: item.districtId, buildingId: item.buildingId });
-    }
+    // Only open the detail overlay in sandbox mode (via the buildingId path below)
+    // In story explore mode, clicking just pans the camera to the building
   }, []);
 
   // --- Sandbox handlers ---
@@ -182,7 +180,7 @@ export default function Home() {
         cityBrightness={cityBrightness}
         cityBrightnessInstant={cityBrightnessInstant}
         storyMode={appMode === 'story'}
-        onBuildingClick={handleBuildingClick}
+        onBuildingClick={appMode === 'story' ? () => {} : handleBuildingClick}
         selectedBuilding={selectedBuilding}
         mode={mode}
         focusedDistrictId={focusedDistrict}
@@ -215,13 +213,13 @@ export default function Home() {
         />
       )}
 
-      {/* Story building detail overlay — shown when a building/floor card is clicked */}
-      {appMode === 'story' && storyBuildingOverlay && storyExploreLevel != null && (
+      {/* Building detail overlay — triggered from carousel in both story explore and sandbox */}
+      {storyBuildingOverlay && (
         <BuildingOverlay
           districtId={storyBuildingOverlay.districtId}
           buildingId={storyBuildingOverlay.buildingId}
-          level={storyExploreLevel}
-          onLevelChange={() => {}}
+          level={appMode === 'story' ? (storyExploreLevel ?? 0) : level}
+          onLevelChange={appMode === 'sandbox' ? setLevel : () => {}}
           onBack={() => setStoryBuildingOverlay(null)}
         />
       )}
@@ -229,22 +227,17 @@ export default function Home() {
       {/* Story explore mode — carousel + Next button */}
       <AnimatePresence>
         {appMode === 'story' && storyExploreLevel !== null && (
-          <>
-            <UnlockCarousel
+          <UnlockCarousel
               level={storyExploreLevel}
               items={storyExploreItems}
               thumbnails={thumbnails}
               accentColor={accentColorForLevel(storyExploreLevel)}
               activeItemId={activeItemId}
               onItemClick={handleCarouselItemClick}
-            />
-            {/* "Next level" button — bottom right, above carousel */}
-            <motion.button
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ delay: 0.6 }}
-              onClick={() => {
+              nextLabel={storyExploreLevel < 5
+                ? `Next: ${LEVEL_LABELS[storyExploreLevel + 1]?.title} →`
+                : 'Enter Sandbox →'}
+              onNext={() => {
                 const nextIndex = storyExploreLevel != null ? storyExploreLevel + 2 : 1;
                 setStoryExploreLevel(null);
                 setCityBrightness(0.35);
@@ -253,27 +246,7 @@ export default function Home() {
                 setFocusedItemBuildingId(null);
                 storyScrollRef.current?.scrollToSection(nextIndex);
               }}
-              style={{
-                position: 'fixed',
-                bottom: 200,
-                right: 20,
-                zIndex: 60,
-                fontFamily: 'monospace',
-                fontSize: '0.75rem',
-                color: accentColorForLevel(storyExploreLevel),
-                background: `${accentColorForLevel(storyExploreLevel)}15`,
-                border: `1px solid ${accentColorForLevel(storyExploreLevel)}44`,
-                borderRadius: 4,
-                padding: '8px 16px',
-                cursor: 'pointer',
-                letterSpacing: '0.08em',
-              }}
-            >
-              {storyExploreLevel < 5
-                ? `Next: ${LEVEL_LABELS[storyExploreLevel + 1]?.title} →`
-                : 'Enter Sandbox →'}
-            </motion.button>
-          </>
+            />
         )}
       </AnimatePresence>
 

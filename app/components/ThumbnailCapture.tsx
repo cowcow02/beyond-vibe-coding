@@ -98,8 +98,9 @@ export function ThumbnailCapture({ level, items, onThumbnailReady }: Props) {
         cz + dist * Math.cos(phi) * Math.cos(theta),
       );
 
-      // Zoom level: tighter for buildings than districts
-      const zoom = item.type === 'district' ? 8 : 22;
+      // Orthographic zoom: smaller = closer. Buildings get a tight close-up,
+      // districts get a wider view to show the whole block.
+      const zoom = item.type === 'district' ? 10 : 1.5;
       cam.left   = -aspect * zoom;
       cam.right  =  aspect * zoom;
       cam.top    =  zoom;

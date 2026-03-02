@@ -6,7 +6,7 @@ import type { UnlockItem } from '../lib/unlocks';
 
 interface Props {
   item: UnlockItem;
-  thumbnail: string | null;   // data URL or null while capturing
+  thumbnail: string | null;   // unused — kept for API compat
   accentColor: string;
   active: boolean;            // camera is focused on this item
   onClick: () => void;
@@ -18,7 +18,41 @@ const TYPE_LABELS: Record<UnlockItem['type'], string> = {
   floor:    'FLOOR ↑',
 };
 
-export function UnlockCard({ item, thumbnail, accentColor, active, onClick }: Props) {
+/** Sharp inline SVG isometric illustration — cluster of buildings, always crisp */
+function IsoThumb({ accentColor }: { accentColor: string }) {
+  const hex = accentColor.replace('#', '');
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const c = (a: number) => `rgba(${r},${g},${b},${a})`;
+
+  const buildings = [
+    { ox: 45, oy: 55, h: 28 },
+    { ox: 75, oy: 48, h: 35 },
+    { ox: 60, oy: 62, h: 18 },
+    { ox: 90, oy: 58, h: 22 },
+  ];
+
+  return (
+    <svg viewBox="0 0 150 90" style={{ width: '100%', height: '100%', display: 'block' }}>
+      <rect width="150" height="90" fill="#080e1c" />
+      <ellipse cx="75" cy="68" rx="55" ry="14" fill={c(0.08)} />
+      {buildings.map(({ ox, oy, h }, i) => {
+        const w = 18;
+        const d = 9;
+        return (
+          <g key={i}>
+            <polygon points={`${ox+w},${oy} ${ox+w},${oy+h} ${ox+w-d},${oy+h+d/2} ${ox+w-d},${oy+d/2}`} fill={c(0.25)} />
+            <polygon points={`${ox-w},${oy} ${ox-w},${oy+h} ${ox-w+d},${oy+h+d/2} ${ox-w+d},${oy+d/2}`} fill={c(0.45)} />
+            <polygon points={`${ox},${oy-d/2} ${ox+w},${oy+d/2} ${ox},${oy+d*1.5} ${ox-w},${oy+d/2}`} fill={c(0.85)} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+export function UnlockCard({ item, accentColor, active, onClick }: Props) {
   return (
     <motion.button
       onClick={onClick}
@@ -38,27 +72,9 @@ export function UnlockCard({ item, thumbnail, accentColor, active, onClick }: Pr
         transition: 'border-color 0.2s',
       }}
     >
-      {/* Thumbnail area — 150×90px */}
-      <div style={{ width: 150, height: 90, position: 'relative', background: 'rgba(255,255,255,0.04)' }}>
-        {thumbnail ? (
-          <motion.img
-            src={thumbnail}
-            alt={item.name}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
-        ) : (
-          /* Shimmer placeholder */
-          <div style={{
-            width: '100%',
-            height: '100%',
-            background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%)',
-            backgroundSize: '200% 100%',
-            animation: 'shimmer 1.5s infinite',
-          }} />
-        )}
+      {/* Thumbnail area — 150×90px inline SVG illustration */}
+      <div style={{ width: 150, height: 90, position: 'relative' }}>
+        <IsoThumb accentColor={accentColor} />
       </div>
 
       {/* Text area */}
