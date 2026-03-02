@@ -52,8 +52,10 @@ export default function Home() {
   // --- Story handlers ---
 
   function handleSectionEnter(lvl: number) {
-    // When navigating to a new story section, exit explore mode
-    if (appMode === 'explore') {
+    // Only exit explore mode when navigating to a DIFFERENT section.
+    // IntersectionObserver re-fires on the same section when scrollSnapType changes
+    // (frozen toggles), so we must guard against that here.
+    if (appMode === 'explore' && lvl !== level) {
       setAppMode('story');
       setMode('city');
       setFocusedDistrict(null);
