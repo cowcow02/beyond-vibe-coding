@@ -206,11 +206,11 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
         {/* Header */}
         <div className="px-6 pt-5 pb-4 border-b" style={{ borderColor: 'rgba(51,65,85,0.4)' }}>
           <button
-            onClick={showDetail ? () => setShowDetail(false) : onBack}
+            onClick={onBack}
             className="font-mono text-[11px] text-slate-500 hover:text-slate-200 transition-colors mb-4 flex items-center gap-1.5 group"
           >
             <span className="group-hover:-translate-x-0.5 transition-transform">←</span>
-            {showDetail ? 'all floors' : 'back to district'}
+            back to city
           </button>
 
           <div className="flex items-center justify-between">
