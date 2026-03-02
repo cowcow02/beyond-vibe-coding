@@ -5,8 +5,6 @@ import { Canvas } from '@react-three/fiber';
 import { MapControls } from '@react-three/drei';
 import { CityWorld } from './CityWorld';
 import { SkyDome } from './SkyDome';
-import { ThumbnailCapture } from './ThumbnailCapture';
-
 interface Props {
   level: number;
   onBuildingClick: (districtId: string, buildingId: string) => void;
@@ -17,12 +15,8 @@ interface Props {
   onBackToCity?: () => void;
   cityBrightness?: number;
   cityBrightnessInstant?: boolean;
-  storyMode?: boolean;
   focusedItemDistrictId?: string | null;
   focusedItemBuildingId?: string | null;
-  captureLevel?: number | null;
-  captureItems?: import('../lib/unlocks').UnlockItem[];
-  onThumbnailReady?: (itemId: string, dataUrl: string) => void;
 }
 
 const CAM_DISTANCE = 80;
@@ -39,7 +33,7 @@ function getIsometricPosition(): [number, number, number] {
   ];
 }
 
-export default function CityScene({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity, cityBrightness = 1.0, cityBrightnessInstant = false, storyMode = false, focusedItemDistrictId, focusedItemBuildingId, captureLevel, captureItems, onThumbnailReady }: Props) {
+export default function CityScene({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity, cityBrightness = 1.0, cityBrightnessInstant = false, focusedItemDistrictId, focusedItemBuildingId }: Props) {
   const camPos = getIsometricPosition();
 
   return (
@@ -112,13 +106,7 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding, mo
         focusedItemDistrictId={focusedItemDistrictId}
         focusedItemBuildingId={focusedItemBuildingId}
       />
-      {captureLevel != null && captureItems && captureItems.length > 0 && onThumbnailReady && (
-        <ThumbnailCapture
-          level={captureLevel}
-          items={captureItems}
-          onThumbnailReady={onThumbnailReady}
-        />
-      )}
+
     </Canvas>
     </div>
   );

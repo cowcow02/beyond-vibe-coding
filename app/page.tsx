@@ -179,7 +179,6 @@ export default function Home() {
         level={canvasLevel}
         cityBrightness={cityBrightness}
         cityBrightnessInstant={cityBrightnessInstant}
-        storyMode={appMode === 'story'}
         onBuildingClick={appMode === 'story' ? () => {} : handleBuildingClick}
         selectedBuilding={selectedBuilding}
         mode={mode}
@@ -188,17 +187,6 @@ export default function Home() {
         onBackToCity={handleBackToCity}
         focusedItemDistrictId={focusedItemDistrictId}
         focusedItemBuildingId={focusedItemBuildingId}
-        captureLevel={
-          appMode === 'sandbox' ? level
-          : storyExploreLevel != null ? storyExploreLevel
-          : null
-        }
-        captureItems={
-          appMode === 'sandbox' ? sandboxUnlockItems
-          : storyExploreLevel != null ? storyExploreItems
-          : []
-        }
-        onThumbnailReady={handleThumbnailReady}
       />
 
       {/* Story overlay — only in story mode */}
