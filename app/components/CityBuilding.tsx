@@ -45,6 +45,8 @@ export function CityBuilding({
   building, district, level, accentColor, districtStyle, isSelected, onBuildingClick,
   worldX, worldZ, facing, selectedFloor, hoveredFloor, onFloorClick, onFloorHover, showLabel = true,
 }: Props) {
+  if (level < (building.appearsAtLevel ?? district.appearsAtLevel)) return null;
+
   const [tileX, tileZ] = tileToWorld(
     district.originCol + building.col,
     district.originRow + building.row,
@@ -55,14 +57,17 @@ export function CityBuilding({
   const wx = worldX !== undefined ? worldX : tileX + TILE_SIZE / 2;
   const wz = worldZ !== undefined ? worldZ : tileZ + TILE_SIZE / 2;
 
-  const numFloors = Math.min(level + 1, 6);
+  const floorStart    = building.floorStartLevel ?? 0;
+  const maxFloors     = 6 - floorStart;
+  const numFloors     = Math.min(level - floorStart + 1, maxFloors);
+  const visibleFloors = Math.max(numFloors, 1);
 
   const floorStates = useRef<FloorState[]>(
     Array.from({ length: 6 }, (_, i) => ({
       targetY:  0,
       currentY: 0,
       velocity: 0,
-      visible:  i < numFloors,
+      visible:  i < visibleFloors,
     }))
   );
 
@@ -70,7 +75,7 @@ export function CityBuilding({
 
   useEffect(() => {
     const prev = prevNumFloors.current;
-    const next = Math.min(level + 1, 6);
+    const next = Math.min(level - floorStart + 1, maxFloors);
     prevNumFloors.current = next;
 
     if (next > prev) {
@@ -173,8 +178,8 @@ export function CityBuilding({
 
       {Array.from({ length: 6 }, (_, floorIdx) => {
         const isLobby   = floorIdx === 0;
-        const isTop     = floorIdx === numFloors - 1 && floorIdx < numFloors;
-        const isVisible = floorIdx < numFloors;
+        const isTop     = floorIdx === visibleFloors - 1 && floorIdx < visibleFloors;
+        const isVisible = floorIdx < visibleFloors;
         // Setback: floors 4+ are slightly narrower
         const setback   = floorIdx >= 4 ? 0.92 : 1.0;
         const selScale  = isSelected ? 1.05 : 1.0;
@@ -362,10 +367,10 @@ export function CityBuilding({
       })}
 
       {/* Floating name label */}
-      {showLabel && numFloors > 0 && (
+      {showLabel && visibleFloors > 0 && (
         <BuildingLabel
           name={building.name}
-          position={[0, numFloors * FLOOR_HEIGHT + 0.5, 0]}
+          position={[0, visibleFloors * FLOOR_HEIGHT + 0.5, 0]}
           accentColor={accentColor}
         />
       )}

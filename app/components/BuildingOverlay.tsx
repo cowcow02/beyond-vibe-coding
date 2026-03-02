@@ -6,7 +6,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { FLOOR_HEIGHT, TILE_SIZE } from '../lib/cityLayout';
-import { districts } from '../data/city';
+import { districts, LEVEL_LABELS } from '../data/city';
 import { CityBuilding } from './CityBuilding';
 import { DISTRICT_COLORS, DISTRICT_STYLES } from './CityWorld';
 import LevelSlider from './LevelSlider';
@@ -54,7 +54,9 @@ function RotatingBuilding({
 
   const FLOOR_W = TILE_SIZE * 0.82;
   const labelFloor = hoveredFloor ?? selectedFloor;
-  const labelData  = labelFloor !== null ? building.floors[labelFloor] : null;
+  const labelData  = labelFloor !== null
+    ? building.floors.find(f => f.level === labelFloor) ?? null
+    : null;
   const labelY     = labelFloor !== null ? labelFloor * FLOOR_HEIGHT + FLOOR_HEIGHT / 2 : 0;
 
   return (
@@ -106,7 +108,9 @@ function RotatingBuilding({
               <span style={{ color: colors.accent, fontSize: '10px', fontWeight: 'bold' }}>
                 L{labelFloor}
               </span>
-              <span style={{ color: '#e2e8f0' }}>{labelData.title}</span>
+              <span style={{ color: '#e2e8f0' }}>
+                {labelData.know.length > 40 ? labelData.know.slice(0, 40) + '…' : labelData.know}
+              </span>
             </div>
           </div>
         </Html>
@@ -172,7 +176,9 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
     ? building.floors.find(f => f.level === selectedFloor)
     : null;
 
-  const unlockedCount = Math.min(level + 1, 6);
+  const floorStart    = building.floorStartLevel ?? 0;
+  const totalFloors   = 6 - floorStart;
+  const unlockedCount = Math.max(Math.min(level - floorStart + 1, totalFloors), 0);
 
   return (
     <div
@@ -214,7 +220,7 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
             {!showDetail && (
               <div className="flex flex-col items-end gap-1">
                 <div className="flex gap-1">
-                  {Array.from({ length: 6 }, (_, i) => (
+                  {Array.from({ length: totalFloors }, (_, i) => (
                     <div
                       key={i}
                       style={{
@@ -228,7 +234,7 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
                   ))}
                 </div>
                 <span className="font-mono text-[10px]" style={{ color: `${colors.accent}99` }}>
-                  {unlockedCount}/6 unlocked
+                  {unlockedCount}/{totalFloors} unlocked
                 </span>
               </div>
             )}
@@ -262,39 +268,51 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
               >
                 <span>FLOOR {activeFloor.level}</span>
               </div>
-              <h3 className="font-mono text-3xl font-bold text-white leading-tight mb-3">
-                {activeFloor.title}
+              <h3 className="font-mono text-xl font-bold text-white leading-tight mb-3">
+                {LEVEL_LABELS[activeFloor.level]?.title ?? `Level ${activeFloor.level}`}
               </h3>
-              <p className="font-mono text-sm leading-relaxed" style={{ color: 'rgba(148,163,184,0.85)' }}>
-                {activeFloor.description}
-              </p>
             </div>
 
-            {/* Skills */}
-            {activeFloor.skills.length > 0 && (
-              <div className="px-6 pb-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-px flex-1" style={{ background: `${colors.accent}30` }} />
-                  <span className="font-mono text-[10px] uppercase tracking-[0.15em]" style={{ color: `${colors.accent}80` }}>
-                    skills
-                  </span>
-                  <div className="h-px flex-1" style={{ background: `${colors.accent}30` }} />
+            {/* Three signals */}
+            <div className="px-6 pb-4 space-y-4">
+              {([
+                { label: 'you know',      value: activeFloor.know,   accent: colors.accent },
+                { label: 'you assume',    value: activeFloor.assume, accent: '#f87171' },
+                { label: "you'll learn",  value: activeFloor.learn,  accent: '#94a3b8' },
+              ] as const).map(({ label, value, accent }) => (
+                <div key={label}>
+                  <div
+                    className="font-mono text-[9px] uppercase tracking-[0.15em] mb-1"
+                    style={{ color: `${accent}80` }}
+                  >
+                    {label}
+                  </div>
+                  <p className="font-mono text-sm leading-relaxed text-slate-200">
+                    {value}
+                  </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {activeFloor.skills.map(skill => (
-                    <span
-                      key={skill}
-                      className="font-mono text-xs px-3 py-1.5 rounded"
-                      style={{
-                        background: 'rgba(15,23,42,0.8)',
-                        border: '1px solid rgba(51,65,85,0.6)',
-                        color: 'rgba(226,232,240,0.85)',
-                      }}
-                    >
-                      {skill}
-                    </span>
-                  ))}
+              ))}
+            </div>
+
+            {/* Prose — a day in the life */}
+            {activeFloor.prose && (
+              <div
+                className="mx-6 mb-4 p-4 rounded-lg"
+                style={{
+                  background: `${colors.accent}08`,
+                  border: `1px solid ${colors.accent}20`,
+                }}
+              >
+                <div
+                  className="font-mono text-[9px] uppercase tracking-[0.15em] mb-2"
+                  style={{ color: `${colors.accent}60` }}
+                >
+                  a day in the life
                 </div>
+                <p className="font-mono text-xs leading-relaxed italic"
+                   style={{ color: 'rgba(148,163,184,0.8)' }}>
+                  {activeFloor.prose}
+                </p>
               </div>
             )}
 
@@ -312,7 +330,7 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
                 ← L{(selectedFloor ?? 0) - 1}
               </button>
               <div className="flex gap-1">
-                {Array.from({ length: unlockedCount }, (_, i) => (
+                {Array.from({ length: totalFloors }, (_, i) => (
                   <div
                     key={i}
                     onClick={() => setSelectedFloor(i)}
@@ -364,8 +382,7 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
                     !isUnlocked ? 'opacity-35 cursor-not-allowed' : 'cursor-pointer hover:brightness-110'
                   }`}
                 >
-                  <div className="flex items-center gap-3 mb-1">
-                    {/* Level badge */}
+                  <div className="flex items-center gap-3 mb-2">
                     <span
                       className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0"
                       style={{
@@ -376,10 +393,10 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
                     >
                       L{floor.level}
                     </span>
-                    <span className={`font-mono text-sm font-semibold ${
+                    <span className={`font-mono text-xs font-semibold ${
                       isUnlocked ? 'text-slate-100' : 'text-slate-600'
                     }`}>
-                      {floor.title}
+                      {LEVEL_LABELS[floor.level]?.title ?? `L${floor.level}`}
                     </span>
                     {!isUnlocked && (
                       <span className="ml-auto font-mono text-[10px] text-slate-700 border border-slate-800 px-1.5 py-0.5 rounded">
@@ -387,25 +404,25 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
                       </span>
                     )}
                   </div>
-                  <p className={`font-mono text-xs leading-relaxed ${
-                    isUnlocked ? 'text-slate-400' : 'text-slate-700'
-                  }`}>
-                    {floor.description}
-                  </p>
-                  {isUnlocked && floor.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {floor.skills.map(skill => (
-                        <span
-                          key={skill}
-                          className="font-mono text-[10px] px-1.5 py-0.5 rounded"
-                          style={{
-                            background: 'rgba(15,23,42,0.6)',
-                            border: '1px solid rgba(51,65,85,0.35)',
-                            color: 'rgba(148,163,184,0.6)',
-                          }}
-                        >
-                          {skill}
-                        </span>
+
+                  {isUnlocked && (
+                    <div className="space-y-1.5">
+                      {([
+                        { label: 'know',   value: floor.know,   color: colors.accent },
+                        { label: 'assume', value: floor.assume, color: '#f87171' },
+                        { label: 'learn',  value: floor.learn,  color: '#94a3b8' },
+                      ] as const).map(({ label, value, color }) => (
+                        <div key={label} className="flex gap-2">
+                          <span
+                            className="font-mono text-[9px] uppercase tracking-widest shrink-0 mt-0.5 w-12"
+                            style={{ color: `${color}80` }}
+                          >
+                            {label}
+                          </span>
+                          <span className="font-mono text-[10px] leading-relaxed text-slate-300">
+                            {value}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   )}
