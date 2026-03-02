@@ -17,6 +17,11 @@ interface Props {
   cityBrightness?: number;
   cityBrightnessInstant?: boolean;
   storyMode?: boolean;
+  focusedItemDistrictId?: string | null;
+  focusedItemBuildingId?: string | null;
+  captureLevel?: number | null;
+  captureItems?: import('../lib/unlocks').UnlockItem[];
+  onThumbnailReady?: (itemId: string, dataUrl: string) => void;
 }
 
 const CAM_DISTANCE = 80;
@@ -33,7 +38,7 @@ function getIsometricPosition(): [number, number, number] {
   ];
 }
 
-export default function CityScene({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity, cityBrightness = 1.0, cityBrightnessInstant = false, storyMode = false }: Props) {
+export default function CityScene({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity, cityBrightness = 1.0, cityBrightnessInstant = false, storyMode = false, focusedItemDistrictId, focusedItemBuildingId, captureLevel, captureItems, onThumbnailReady }: Props) {
   const camPos = getIsometricPosition();
 
   return (
@@ -103,6 +108,8 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding, mo
         focusedDistrictId={focusedDistrictId}
         onDistrictClick={onDistrictClick}
         onBackToCity={onBackToCity}
+        focusedItemDistrictId={focusedItemDistrictId}
+        focusedItemBuildingId={focusedItemBuildingId}
       />
     </Canvas>
     </div>

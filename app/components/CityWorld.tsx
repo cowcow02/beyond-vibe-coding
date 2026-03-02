@@ -175,9 +175,12 @@ interface Props {
   focusedDistrictId: string | null;
   onDistrictClick: (districtId: string) => void;
   onBackToCity?: () => void;
+  // NEW: for unlock carousel camera focus
+  focusedItemDistrictId?: string | null;
+  focusedItemBuildingId?: string | null;
 }
 
-export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity }: Props) {
+export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity, focusedItemDistrictId, focusedItemBuildingId: _focusedItemBuildingId }: Props) {
   // Computed once on mount; Date.now() seed inside generates a unique layout each page load.
   const layout: GeneratedLayout = useMemo(() => generateLayout(districts), []);
 
@@ -207,10 +210,18 @@ export function CityWorld({ level, onBuildingClick, selectedBuilding, mode, focu
     [layout.blocks, focusedDistrictId],
   );
 
+  // Item focus: when carousel card is clicked, focus its district block
+  const focusedItemBlock = useMemo(
+    () => focusedItemDistrictId
+      ? layout.blocks.find(b => b.districtId === focusedItemDistrictId)
+      : undefined,
+    [layout.blocks, focusedItemDistrictId],
+  );
+
   return (
     <group>  {/* no position offset needed — layout is centered at origin */}
       {/* Camera rig — smooth pan + zoom to fit active/focused blocks */}
-      <CameraRig activeBlocks={activeBlocks} focusedBlock={focusedBlock} />
+      <CameraRig activeBlocks={activeBlocks} focusedBlock={focusedItemBlock ?? focusedBlock} />
 
       {/* Ground base — warm milky stone. Click outside district to go back to city. */}
       <mesh
