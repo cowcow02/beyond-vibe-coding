@@ -1,16 +1,22 @@
 // app/page.tsx
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import CityCanvas from './components/CityCanvas';
 import { StoryScroll } from './components/StoryScroll';
+import type { StoryScrollHandle } from './components/StoryScroll';
 import LevelSlider from './components/LevelSlider';
 import { DistrictStrip } from './components/DistrictStrip';
 import { BuildingOverlay } from './components/BuildingOverlay';
+import { UnlockCarousel } from './components/UnlockCarousel';
+import { getUnlocksForLevel } from './lib/unlocks';
+import type { UnlockItem } from './lib/unlocks';
+import { accentColorForLevel } from './lib/levelColors';
+import { webCity, LEVEL_LABELS } from './data/city';
 
 type Mode = 'city' | 'district' | 'building';
-type AppMode = 'story' | 'sandbox';
+type AppMode = 'story' | 'explore' | 'sandbox';
 
 export default function Home() {
   // App-level mode
@@ -21,9 +27,10 @@ export default function Home() {
   const [cityBrightness, setCityBrightness] = useState(0.4); // hero: visible but dim
   const [cityBrightnessInstant, setCityBrightnessInstant] = useState(false);
   const pendingLevelRef = useRef<number>(5);                 // level to apply on reveal
+  const storyScrollRef  = useRef<StoryScrollHandle>(null);
 
-  // Sandbox state
-  const [level,            setLevel]            = useState(5); // sandbox always starts at L5
+  // Shared city state (used in explore + sandbox)
+  const [level,            setLevel]            = useState(5);
   const [mode,             setMode]             = useState<Mode>('city');
   const [focusedDistrict,  setFocusedDistrict]  = useState<string | null>(null);
   const [selectedBuilding, setSelectedBuilding] = useState<{
@@ -31,12 +38,28 @@ export default function Home() {
     buildingId: string;
   } | null>(null);
 
+  // Carousel state (shared across explore + sandbox)
+  const [activeItemId, setActiveItemId] = useState<string | null>(null);
+  const [focusedItemDistrictId, setFocusedItemDistrictId] = useState<string | null>(null);
+  const [focusedItemBuildingId, setFocusedItemBuildingId] = useState<string | null>(null);
+
+  // Derived unlock items
+  const unlockItems = useMemo(() => getUnlocksForLevel(level, webCity), [level]);
+
   // Derived canvas level
   const canvasLevel = appMode === 'story' ? storyLevel : level;
 
   // --- Story handlers ---
 
   function handleSectionEnter(lvl: number) {
+    // Only exit explore mode when navigating to a DIFFERENT section.
+    // IntersectionObserver re-fires on the same section when scrollSnapType changes
+    // (frozen toggles), so we must guard against that here.
+    if (appMode === 'explore' && lvl !== level) {
+      setAppMode('story');
+      setMode('city');
+      setFocusedDistrict(null);
+    }
     if (lvl < 0) {
       // Hero: show full city
       pendingLevelRef.current = 5;
@@ -61,10 +84,6 @@ export default function Home() {
     }
     if (phase === 'reveal') {
       // Wait for title overlay to finish fading (~500ms), then reveal the city.
-      // For L0: restore smooth brightness transition and set level=0 simultaneously.
-      // The 0.7s CSS brightness transition naturally masks the early spring phase —
-      // roads/cars are invisible at brightness=0 and only become visible as the city
-      // brightens, by which point buildings are already partway through their spring.
       setTimeout(() => {
         setCityBrightnessInstant(false);
         setCityBrightness(1.0);
@@ -79,12 +98,26 @@ export default function Home() {
   function handleSandboxEnter() {
     setAppMode('sandbox');
     setCityBrightness(1.0);
+    // level stays at its current value (last explore level or default 5)
+  }
+
+  function handleExplore(lvl: number) {
+    setLevel(lvl);           // lock to this story level
+    setAppMode('explore');
+    setMode('city');
+    setCityBrightness(1.0);
+    setActiveItemId(null);
+    setFocusedItemDistrictId(null);
+    setFocusedItemBuildingId(null);
   }
 
   // --- Sandbox handlers ---
 
   const handleLevelChange = useCallback((newLevel: number) => {
     setLevel(newLevel);
+    setActiveItemId(null);
+    setFocusedItemDistrictId(null);
+    setFocusedItemBuildingId(null);
     if (mode === 'district') {
       setMode('city');
       setFocusedDistrict(null);
@@ -114,6 +147,16 @@ export default function Home() {
     setSelectedBuilding(null);
   }, []);
 
+  const handleCarouselItemClick = useCallback((item: UnlockItem) => {
+    setActiveItemId(item.id);
+    setFocusedItemDistrictId(item.districtId);
+    setFocusedItemBuildingId(item.buildingId ?? null);
+    // Open building detail if the item has a building
+    if (item.buildingId) {
+      handleBuildingClick(item.districtId, item.buildingId);
+    }
+  }, [handleBuildingClick]);
+
   return (
     <main className="w-screen h-screen overflow-hidden bg-slate-950">
       {/* Canvas — always mounted, always full screen */}
@@ -121,25 +164,71 @@ export default function Home() {
         level={canvasLevel}
         cityBrightness={cityBrightness}
         cityBrightnessInstant={cityBrightnessInstant}
-        storyMode={appMode === 'story'}
-        onBuildingClick={handleBuildingClick}
+        onBuildingClick={appMode === 'story' ? () => {} : handleBuildingClick}
         selectedBuilding={selectedBuilding}
         mode={mode}
         focusedDistrictId={focusedDistrict}
         onDistrictClick={handleDistrictClick}
         onBackToCity={handleBackToCity}
+        focusedItemDistrictId={focusedItemDistrictId}
+        focusedItemBuildingId={focusedItemBuildingId}
       />
 
-      {/* Story overlay — only in story mode */}
-      {appMode === 'story' && (
+      {/* Story overlay — only in story/explore mode (scroll UI) */}
+      {appMode !== 'sandbox' && (
         <StoryScroll
+          ref={storyScrollRef}
           onLevelChange={handleSectionEnter}
           onPhaseChange={handlePhaseChange}
           onSandboxEnter={handleSandboxEnter}
+          onExplore={handleExplore}
+          frozen={appMode === 'explore'}
         />
       )}
 
-      {/* Sandbox UI — only in sandbox mode */}
+      {/* Carousel — shown in explore and sandbox modes */}
+      <AnimatePresence>
+        {appMode !== 'story' && mode !== 'building' && (
+          <UnlockCarousel
+            level={level}
+            items={unlockItems}
+            accentColor={accentColorForLevel(level)}
+            activeItemId={activeItemId}
+            onItemClick={handleCarouselItemClick}
+            bottomOffset={appMode === 'sandbox' ? 76 : 0}
+            nextLabel={appMode === 'explore'
+              ? (level < 5
+                  ? `Next: ${LEVEL_LABELS[level + 1]?.title} →`
+                  : 'Enter Sandbox →')
+              : undefined}
+            onNext={appMode === 'explore' ? () => {
+              const nextIndex = level + 2;
+              setAppMode('story');
+              setMode('city');
+              setFocusedDistrict(null);
+              setCityBrightness(0.35);
+              setActiveItemId(null);
+              setFocusedItemDistrictId(null);
+              setFocusedItemBuildingId(null);
+              storyScrollRef.current?.scrollToSection(nextIndex);
+            } : undefined}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Building detail overlay — explore and sandbox */}
+      {mode === 'building' && selectedBuilding && (
+        <BuildingOverlay
+          districtId={selectedBuilding.districtId}
+          buildingId={selectedBuilding.buildingId}
+          level={level}
+          onLevelChange={appMode === 'sandbox' ? setLevel : () => {}}
+          onBack={appMode === 'sandbox' ? handleBackToDistrict : handleBackToCity}
+          startAtDetail={appMode === 'explore'}
+        />
+      )}
+
+      {/* Sandbox UI — level slider + district strip */}
       {appMode === 'sandbox' && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -148,15 +237,6 @@ export default function Home() {
         >
           {mode === 'district' && focusedDistrict && (
             <DistrictStrip districtId={focusedDistrict} level={level} onBack={handleBackToCity} />
-          )}
-          {mode === 'building' && selectedBuilding && (
-            <BuildingOverlay
-              districtId={selectedBuilding.districtId}
-              buildingId={selectedBuilding.buildingId}
-              level={level}
-              onLevelChange={setLevel}
-              onBack={handleBackToDistrict}
-            />
           )}
           {mode !== 'building' && <LevelSlider level={level} onChange={handleLevelChange} />}
         </motion.div>

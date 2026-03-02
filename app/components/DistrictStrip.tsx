@@ -2,6 +2,7 @@
 'use client';
 
 import { districts } from '../data/city';
+import { DISTRICT_COLORS } from './CityWorld';
 
 interface Props {
   districtId: string;
@@ -9,23 +10,11 @@ interface Props {
   onBack: () => void;
 }
 
-const ACCENT_COLORS: Record<string, string> = {
-  frontend:        '#60a5fa',
-  backend:         '#34d399',
-  databases:       '#a78bfa',
-  devops:          '#fb923c',
-  testing:         '#f472b6',
-  security:        '#f87171',
-  'system-design': '#38bdf8',
-  performance:     '#fbbf24',
-  leadership:      '#e879f9',
-};
-
 export function DistrictStrip({ districtId, level, onBack }: Props) {
   const district = districts.find(d => d.id === districtId);
   if (!district) return null;
 
-  const accent = ACCENT_COLORS[districtId] ?? '#60a5fa';
+  const accent = (DISTRICT_COLORS[districtId] ?? DISTRICT_COLORS['frontend']).accent;
 
   return (
     <div
