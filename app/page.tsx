@@ -19,6 +19,7 @@ export default function Home() {
   // Story state
   const [storyLevel, setStoryLevel] = useState(5);           // hero shows final city
   const [cityBrightness, setCityBrightness] = useState(0.4); // hero: visible but dim
+  const [cityBrightnessInstant, setCityBrightnessInstant] = useState(false);
   const pendingLevelRef = useRef<number>(5);                 // level to apply on reveal
 
   // Sandbox state
@@ -36,9 +37,6 @@ export default function Home() {
   // --- Story handlers ---
 
   function handleSectionEnter(lvl: number) {
-    // Store the pending level — don't apply it yet.
-    // The city keeps showing the PREVIOUS level during the title card.
-    // storyLevel is only updated once the title has fully faded out (in handlePhaseChange).
     if (lvl < 0) {
       // Hero: show full city
       pendingLevelRef.current = 5;
@@ -51,21 +49,27 @@ export default function Home() {
 
   function handlePhaseChange(lvl: number, phase: string) {
     if (phase === 'title') {
-      setCityBrightness(0.2); // dim the existing city during title card
+      if (lvl === 0) {
+        // L0: drop to black INSTANTLY so the spring collapse from L5→-1 is invisible.
+        setCityBrightnessInstant(true);
+        setCityBrightness(0);
+        setStoryLevel(-1);
+      } else {
+        setCityBrightnessInstant(false);
+        setCityBrightness(0.2);
+      }
     }
     if (phase === 'reveal') {
-      // Title overlay exit animation takes ~500ms — wait for it to finish,
-      // then apply the new level so buildings grow in on a clean screen.
+      // Wait for title overlay to finish fading (~500ms), then reveal the city.
+      // For L0: restore smooth brightness transition and set level=0 simultaneously.
+      // The 0.7s CSS brightness transition naturally masks the early spring phase —
+      // roads/cars are invisible at brightness=0 and only become visible as the city
+      // brightens, by which point buildings are already partway through their spring.
       setTimeout(() => {
-        const target = pendingLevelRef.current;
-        if (target === 0) {
-          // L0: keep the full city — the narrative is "what you can't see yet
-          // is the city around you." Showing the full city during L0 is intentional.
-          setCityBrightness(1.0);
-        } else {
-          setStoryLevel(target);
-          setCityBrightness(1.0);
-        }
+        setCityBrightnessInstant(false);
+        setCityBrightness(1.0);
+        if (lvl === 0) setStoryLevel(0);
+        else setStoryLevel(pendingLevelRef.current);
       }, 500);
     }
     if (phase === 'settle')    setCityBrightness(0.35);
@@ -79,7 +83,6 @@ export default function Home() {
 
   // --- Sandbox handlers ---
 
-  // Level change — resets to city view when in district mode
   const handleLevelChange = useCallback((newLevel: number) => {
     setLevel(newLevel);
     if (mode === 'district') {
@@ -88,20 +91,17 @@ export default function Home() {
     }
   }, [mode]);
 
-  // City → District
   const handleDistrictClick = useCallback((districtId: string) => {
     setFocusedDistrict(districtId);
     setMode('district');
   }, []);
 
-  // District → City
   const handleBackToCity = useCallback(() => {
     setMode('city');
     setFocusedDistrict(null);
     setSelectedBuilding(null);
   }, []);
 
-  // Any mode → Building
   const handleBuildingClick = useCallback((districtId: string, buildingId: string) => {
     if (!districtId) return;
     if (mode === 'city') setFocusedDistrict(districtId);
@@ -109,7 +109,6 @@ export default function Home() {
     setMode('building');
   }, [mode]);
 
-  // Building → District
   const handleBackToDistrict = useCallback(() => {
     setMode('district');
     setSelectedBuilding(null);
@@ -121,6 +120,7 @@ export default function Home() {
       <CityCanvas
         level={canvasLevel}
         cityBrightness={cityBrightness}
+        cityBrightnessInstant={cityBrightnessInstant}
         storyMode={appMode === 'story'}
         onBuildingClick={handleBuildingClick}
         selectedBuilding={selectedBuilding}

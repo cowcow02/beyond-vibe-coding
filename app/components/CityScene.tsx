@@ -15,6 +15,7 @@ interface Props {
   onDistrictClick: (districtId: string) => void;
   onBackToCity?: () => void;
   cityBrightness?: number;
+  cityBrightnessInstant?: boolean;
   storyMode?: boolean;
 }
 
@@ -32,7 +33,7 @@ function getIsometricPosition(): [number, number, number] {
   ];
 }
 
-export default function CityScene({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity, cityBrightness = 1.0, storyMode = false }: Props) {
+export default function CityScene({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity, cityBrightness = 1.0, cityBrightnessInstant = false, storyMode = false }: Props) {
   const camPos = getIsometricPosition();
 
   return (
@@ -41,7 +42,7 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding, mo
         position: 'absolute',
         inset: 0,
         filter: `brightness(${cityBrightness})`,
-        transition: 'filter 0.7s ease',
+        transition: cityBrightnessInstant ? 'none' : 'filter 0.7s ease',
       }}
     >
     <Canvas

@@ -215,7 +215,7 @@ export function CityTraffic({ segments }: Props) {
         nextT:         0,
       };
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [segments]); // re-initialize cars when road segments change (level change)
 
   useFrame((_, delta) => {
     cars.forEach((car, i) => {
