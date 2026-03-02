@@ -14,10 +14,11 @@ interface Props {
   accentColor: string;
   activeItemId: string | null;
   onItemClick: (item: UnlockItem) => void;
+  bottomOffset?: number;             // shift up (e.g. to sit above a fixed slider)
 }
 
 export function UnlockCarousel({
-  level, items, thumbnails, accentColor, activeItemId, onItemClick,
+  level, items, thumbnails, accentColor, activeItemId, onItemClick, bottomOffset = 0,
 }: Props) {
   const [minimized, setMinimized] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -34,7 +35,7 @@ export function UnlockCarousel({
       transition={{ duration: 0.4, ease: 'easeOut' }}
       style={{
         position: 'fixed',
-        bottom: 0,
+        bottom: bottomOffset,
         left: 0,
         right: 0,
         zIndex: 50,

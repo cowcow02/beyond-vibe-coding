@@ -46,6 +46,10 @@ export default function Home() {
 
   // Story explore state
   const [storyExploreLevel, setStoryExploreLevel] = useState<number | null>(null);
+  const [storyBuildingOverlay, setStoryBuildingOverlay] = useState<{
+    districtId: string;
+    buildingId: string;
+  } | null>(null);
 
   // Derived unlock items
   const sandboxUnlockItems = useMemo(() => getUnlocksForLevel(level, webCity), [level]);
@@ -109,6 +113,7 @@ export default function Home() {
 
   function handleExplore(lvl: number) {
     setStoryExploreLevel(lvl);
+    setStoryBuildingOverlay(null);
     setCityBrightness(1.0);
     setActiveItemId(null);
     setFocusedItemDistrictId(null);
@@ -127,6 +132,10 @@ export default function Home() {
     setActiveItemId(item.id);
     setFocusedItemDistrictId(item.districtId);
     setFocusedItemBuildingId(item.buildingId ?? null);
+    // Building/floor items: open the detail overlay
+    if (item.buildingId && (item.type === 'building' || item.type === 'floor')) {
+      setStoryBuildingOverlay({ districtId: item.districtId, buildingId: item.buildingId });
+    }
   }, []);
 
   // --- Sandbox handlers ---
@@ -206,6 +215,17 @@ export default function Home() {
         />
       )}
 
+      {/* Story building detail overlay — shown when a building/floor card is clicked */}
+      {appMode === 'story' && storyBuildingOverlay && storyExploreLevel != null && (
+        <BuildingOverlay
+          districtId={storyBuildingOverlay.districtId}
+          buildingId={storyBuildingOverlay.buildingId}
+          level={storyExploreLevel}
+          onLevelChange={() => {}}
+          onBack={() => setStoryBuildingOverlay(null)}
+        />
+      )}
+
       {/* Story explore mode — carousel + Next button */}
       <AnimatePresence>
         {appMode === 'story' && storyExploreLevel !== null && (
@@ -280,9 +300,9 @@ export default function Home() {
         </motion.div>
       )}
 
-      {/* Sandbox carousel */}
+      {/* Sandbox carousel — sits above the LevelSlider */}
       <AnimatePresence>
-        {appMode === 'sandbox' && (
+        {appMode === 'sandbox' && mode !== 'building' && (
           <UnlockCarousel
             level={level}
             items={sandboxUnlockItems}
@@ -290,6 +310,7 @@ export default function Home() {
             accentColor={accentColorForLevel(level)}
             activeItemId={activeItemId}
             onItemClick={handleCarouselItemClick}
+            bottomOffset={76}
           />
         )}
       </AnimatePresence>

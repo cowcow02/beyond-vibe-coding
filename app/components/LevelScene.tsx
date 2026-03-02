@@ -142,15 +142,31 @@ export default function LevelScene({
               L{levelIndex}
             </span>
 
-            {/* Tagline via TypewriterText */}
+            {/* Level title — big and instant */}
             <div
               style={{
                 fontFamily: 'monospace',
-                fontSize: 'clamp(1.5rem, 3vw, 2.25rem)',
+                fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
+                fontWeight: 700,
                 color: '#ffffff',
                 textAlign: 'center',
-                maxWidth: '700px',
-                lineHeight: 1.3,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                lineHeight: 1.1,
+              }}
+            >
+              {labelData?.title}
+            </div>
+
+            {/* Tagline via TypewriterText — smaller, types out below */}
+            <div
+              style={{
+                fontFamily: 'monospace',
+                fontSize: 'clamp(1rem, 2vw, 1.375rem)',
+                color: 'rgba(255,255,255,0.7)',
+                textAlign: 'center',
+                maxWidth: '600px',
+                lineHeight: 1.4,
                 padding: '0 1.5rem',
               }}
             >

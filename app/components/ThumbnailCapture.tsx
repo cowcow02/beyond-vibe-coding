@@ -145,6 +145,10 @@ export function ThumbnailCapture({ level, items, onThumbnailReady }: Props) {
       cancelled = true;
       clearTimeout(startTimeout);
       rt.dispose();
+      capturedRef.current = false;
+      // Remove incomplete cache entry so the next mount starts a fresh capture
+      // (React Strict Mode fires cleanup before the 600ms timeout can run)
+      if (levelCache.size === 0) thumbnailCache.delete(level);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level]);
