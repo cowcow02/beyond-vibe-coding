@@ -126,17 +126,18 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
   const [selectedFloor, setSelectedFloor] = useState<number | null>(level);
   const [hoveredFloor,  setHoveredFloor]  = useState<number | null>(null);
   const [showDetail,    setShowDetail]    = useState(startAtDetail);
-  const listRef    = useRef<HTMLDivElement>(null);
-  const mountedRef = useRef(false);
+  const listRef      = useRef<HTMLDivElement>(null);
+  const prevLevelRef = useRef<number>(level);
 
   const district = districts.find(d => d.id === districtId);
   const building = district?.buildings.find(b => b.id === buildingId);
   const colors   = DISTRICT_COLORS[districtId] ?? DISTRICT_COLORS['frontend'];
 
-  // When level changes (slider in sandbox), update selected floor and return to listing.
-  // Skip on first mount so startAtDetail is not overwritten.
+  // When level actually changes (sandbox slider), update selected floor and return to listing.
+  // Compare against prevLevelRef so this is skipped on mount AND on StrictMode double-invoke.
   useEffect(() => {
-    if (!mountedRef.current) { mountedRef.current = true; return; }
+    if (prevLevelRef.current === level) return;
+    prevLevelRef.current = level;
     setSelectedFloor(level);
     setShowDetail(false);
   }, [level]);
@@ -176,8 +177,11 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
 
   if (!district || !building) return null;
 
+  // Find the active floor; fall back to the highest unlocked floor if exact match is missing
   const activeFloor = selectedFloor !== null
-    ? building.floors.find(f => f.level === selectedFloor)
+    ? (building.floors.find(f => f.level === selectedFloor)
+       ?? building.floors.filter(f => f.level <= level).at(-1)
+       ?? null)
     : null;
 
   const floorStart    = building.floorStartLevel ?? 0;
