@@ -126,14 +126,17 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
   const [selectedFloor, setSelectedFloor] = useState<number | null>(level);
   const [hoveredFloor,  setHoveredFloor]  = useState<number | null>(null);
   const [showDetail,    setShowDetail]    = useState(startAtDetail);
-  const listRef = useRef<HTMLDivElement>(null);
+  const listRef    = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef(false);
 
   const district = districts.find(d => d.id === districtId);
   const building = district?.buildings.find(b => b.id === buildingId);
   const colors   = DISTRICT_COLORS[districtId] ?? DISTRICT_COLORS['frontend'];
 
-  // When level changes, update selected floor and exit detail view
+  // When level changes (slider in sandbox), update selected floor and return to listing.
+  // Skip on first mount so startAtDetail is not overwritten.
   useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return; }
     setSelectedFloor(level);
     setShowDetail(false);
   }, [level]);
