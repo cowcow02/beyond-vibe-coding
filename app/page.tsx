@@ -111,12 +111,6 @@ export default function Home() {
     setFocusedItemBuildingId(null);
   }
 
-  const handleCarouselItemClick = useCallback((item: UnlockItem) => {
-    setActiveItemId(item.id);
-    setFocusedItemDistrictId(item.districtId);
-    setFocusedItemBuildingId(item.buildingId ?? null);
-  }, []);
-
   // --- Sandbox handlers ---
 
   const handleLevelChange = useCallback((newLevel: number) => {
@@ -153,6 +147,16 @@ export default function Home() {
     setSelectedBuilding(null);
   }, []);
 
+  const handleCarouselItemClick = useCallback((item: UnlockItem) => {
+    setActiveItemId(item.id);
+    setFocusedItemDistrictId(item.districtId);
+    setFocusedItemBuildingId(item.buildingId ?? null);
+    // Open building detail if the item has a building
+    if (item.buildingId) {
+      handleBuildingClick(item.districtId, item.buildingId);
+    }
+  }, [handleBuildingClick]);
+
   return (
     <main className="w-screen h-screen overflow-hidden bg-slate-950">
       {/* Canvas — always mounted, always full screen */}
@@ -160,7 +164,7 @@ export default function Home() {
         level={canvasLevel}
         cityBrightness={cityBrightness}
         cityBrightnessInstant={cityBrightnessInstant}
-        onBuildingClick={appMode === 'sandbox' ? handleBuildingClick : () => {}}
+        onBuildingClick={appMode === 'story' ? () => {} : handleBuildingClick}
         selectedBuilding={selectedBuilding}
         mode={mode}
         focusedDistrictId={focusedDistrict}
@@ -212,7 +216,18 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Sandbox UI — level slider + district/building overlays */}
+      {/* Building detail overlay — explore and sandbox */}
+      {mode === 'building' && selectedBuilding && (
+        <BuildingOverlay
+          districtId={selectedBuilding.districtId}
+          buildingId={selectedBuilding.buildingId}
+          level={level}
+          onLevelChange={appMode === 'sandbox' ? setLevel : () => {}}
+          onBack={appMode === 'sandbox' ? handleBackToDistrict : handleBackToCity}
+        />
+      )}
+
+      {/* Sandbox UI — level slider + district strip */}
       {appMode === 'sandbox' && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -221,15 +236,6 @@ export default function Home() {
         >
           {mode === 'district' && focusedDistrict && (
             <DistrictStrip districtId={focusedDistrict} level={level} onBack={handleBackToCity} />
-          )}
-          {mode === 'building' && selectedBuilding && (
-            <BuildingOverlay
-              districtId={selectedBuilding.districtId}
-              buildingId={selectedBuilding.buildingId}
-              level={level}
-              onLevelChange={setLevel}
-              onBack={handleBackToDistrict}
-            />
           )}
           {mode !== 'building' && <LevelSlider level={level} onChange={handleLevelChange} />}
         </motion.div>
