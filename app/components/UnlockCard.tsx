@@ -6,7 +6,6 @@ import type { UnlockItem } from '../lib/unlocks';
 
 interface Props {
   item: UnlockItem;
-  thumbnail: string | null;   // unused — kept for API compat
   accentColor: string;
   active: boolean;            // camera is focused on this item
   onClick: () => void;

@@ -39,7 +39,6 @@ export default function Home() {
   } | null>(null);
 
   // Carousel state (shared between sandbox + story explore)
-  const [thumbnails, setThumbnails] = useState<Map<string, string>>(new Map());
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [focusedItemDistrictId, setFocusedItemDistrictId] = useState<string | null>(null);
   const [focusedItemBuildingId, setFocusedItemBuildingId] = useState<string | null>(null);
@@ -119,14 +118,6 @@ export default function Home() {
     setFocusedItemDistrictId(null);
     setFocusedItemBuildingId(null);
   }
-
-  const handleThumbnailReady = useCallback((itemId: string, dataUrl: string) => {
-    setThumbnails(prev => {
-      const next = new Map(prev);
-      next.set(itemId, dataUrl);
-      return next;
-    });
-  }, []);
 
   const handleCarouselItemClick = useCallback((item: UnlockItem) => {
     setActiveItemId(item.id);
@@ -218,7 +209,6 @@ export default function Home() {
           <UnlockCarousel
               level={storyExploreLevel}
               items={storyExploreItems}
-              thumbnails={thumbnails}
               accentColor={accentColorForLevel(storyExploreLevel)}
               activeItemId={activeItemId}
               onItemClick={handleCarouselItemClick}
@@ -267,7 +257,6 @@ export default function Home() {
           <UnlockCarousel
             level={level}
             items={sandboxUnlockItems}
-            thumbnails={thumbnails}
             accentColor={accentColorForLevel(level)}
             activeItemId={activeItemId}
             onItemClick={handleCarouselItemClick}

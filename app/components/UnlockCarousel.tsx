@@ -10,7 +10,6 @@ import { LEVEL_LABELS } from '../data/city';
 interface Props {
   level: number;
   items: UnlockItem[];
-  thumbnails: Map<string, string>;   // itemId → data URL
   accentColor: string;
   activeItemId: string | null;
   onItemClick: (item: UnlockItem) => void;
@@ -20,7 +19,7 @@ interface Props {
 }
 
 export function UnlockCarousel({
-  level, items, thumbnails, accentColor, activeItemId, onItemClick, bottomOffset = 0,
+  level, items, accentColor, activeItemId, onItemClick, bottomOffset = 0,
   nextLabel, onNext,
 }: Props) {
   const [minimized, setMinimized] = useState(false);
@@ -125,7 +124,6 @@ export function UnlockCarousel({
                 <UnlockCard
                   key={item.id}
                   item={item}
-                  thumbnail={thumbnails.get(item.id) ?? null}
                   accentColor={accentColor}
                   active={activeItemId === item.id}
                   onClick={() => onItemClick(item)}
