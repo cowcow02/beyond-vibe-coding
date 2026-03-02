@@ -5,12 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LEVEL_LABELS } from '../data/city';
 import TypewriterText from './TypewriterText';
 
-type Phase = 'idle' | 'title' | 'reveal' | 'settle' | 'narrative';
+type Phase = 'idle' | 'title' | 'reveal' | 'settle' | 'narrative' | 'explore';
 
 interface Props {
   levelIndex: number;
   active: boolean;
   onPhaseChange: (phase: Phase) => void;
+  onExplore: () => void;
   accentColor?: string;
 }
 
@@ -18,6 +19,7 @@ export default function LevelScene({
   levelIndex,
   active,
   onPhaseChange,
+  onExplore,
   accentColor = '#60a5fa',
 }: Props) {
   const [phase, setPhase] = useState<Phase>('idle');
@@ -174,6 +176,7 @@ export default function LevelScene({
             style={{
               position: 'absolute',
               inset: 0,
+              pointerEvents: 'auto',
               background:
                 'linear-gradient(to bottom, transparent 0%, rgba(2,6,23,0.7) 45%, rgba(2,6,23,0.85) 100%)',
               display: 'flex',
@@ -223,6 +226,29 @@ export default function LevelScene({
 
               {/* Scroll hint with pulsing animation */}
               <PulsingHint />
+
+              {/* Explore button */}
+              <button
+                onClick={() => {
+                  transitionTo('explore');
+                  onExplore();
+                }}
+                style={{
+                  pointerEvents: 'auto',
+                  marginTop: '0.5rem',
+                  fontFamily: 'monospace',
+                  fontSize: '0.75rem',
+                  color: accentColor,
+                  background: `${accentColor}15`,
+                  border: `1px solid ${accentColor}44`,
+                  borderRadius: 4,
+                  padding: '6px 16px',
+                  cursor: 'pointer',
+                  letterSpacing: '0.08em',
+                }}
+              >
+                [ Explore this level ]
+              </button>
             </div>
           </motion.div>
         )}
