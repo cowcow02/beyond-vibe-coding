@@ -78,9 +78,7 @@ export default function TypewriterText({
       <span className={className} style={style}>
         {displayed}
         {!isComplete && (
-          <span className="typewriter-cursor" aria-hidden="true">
-            |
-          </span>
+          <span className="typewriter-cursor" aria-hidden="true">_</span>
         )}
       </span>
     </>

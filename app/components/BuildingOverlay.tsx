@@ -17,6 +17,7 @@ interface Props {
   level: number;
   onLevelChange: (level: number) => void;
   onBack: () => void;
+  startAtDetail?: boolean;  // skip floor list, open directly on detail view
 }
 
 // ── Mini canvas: one building with slow auto-rotation ───────────────────────
@@ -121,18 +122,22 @@ function RotatingBuilding({
 
 // ── Main overlay ─────────────────────────────────────────────────────────────
 
-export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, onBack }: Props) {
+export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, onBack, startAtDetail = false }: Props) {
   const [selectedFloor, setSelectedFloor] = useState<number | null>(level);
   const [hoveredFloor,  setHoveredFloor]  = useState<number | null>(null);
-  const [showDetail,    setShowDetail]    = useState(false);
-  const listRef = useRef<HTMLDivElement>(null);
+  const [showDetail,    setShowDetail]    = useState(startAtDetail);
+  const listRef      = useRef<HTMLDivElement>(null);
+  const prevLevelRef = useRef<number>(level);
 
   const district = districts.find(d => d.id === districtId);
   const building = district?.buildings.find(b => b.id === buildingId);
   const colors   = DISTRICT_COLORS[districtId] ?? DISTRICT_COLORS['frontend'];
 
-  // When level changes, update selected floor and exit detail view
+  // When level actually changes (sandbox slider), update selected floor and return to listing.
+  // Compare against prevLevelRef so this is skipped on mount AND on StrictMode double-invoke.
   useEffect(() => {
+    if (prevLevelRef.current === level) return;
+    prevLevelRef.current = level;
     setSelectedFloor(level);
     setShowDetail(false);
   }, [level]);
@@ -172,8 +177,11 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
 
   if (!district || !building) return null;
 
+  // Find the active floor; fall back to the highest unlocked floor if exact match is missing
   const activeFloor = selectedFloor !== null
-    ? building.floors.find(f => f.level === selectedFloor)
+    ? (building.floors.find(f => f.level === selectedFloor)
+       ?? building.floors.filter(f => f.level <= level).at(-1)
+       ?? null)
     : null;
 
   const floorStart    = building.floorStartLevel ?? 0;
@@ -198,11 +206,11 @@ export function BuildingOverlay({ districtId, buildingId, level, onLevelChange, 
         {/* Header */}
         <div className="px-6 pt-5 pb-4 border-b" style={{ borderColor: 'rgba(51,65,85,0.4)' }}>
           <button
-            onClick={showDetail ? () => setShowDetail(false) : onBack}
+            onClick={onBack}
             className="font-mono text-[11px] text-slate-500 hover:text-slate-200 transition-colors mb-4 flex items-center gap-1.5 group"
           >
             <span className="group-hover:-translate-x-0.5 transition-transform">←</span>
-            {showDetail ? 'all floors' : 'back to district'}
+            back to city
           </button>
 
           <div className="flex items-center justify-between">

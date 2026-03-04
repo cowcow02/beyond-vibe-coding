@@ -5,7 +5,6 @@ import { Canvas } from '@react-three/fiber';
 import { MapControls } from '@react-three/drei';
 import { CityWorld } from './CityWorld';
 import { SkyDome } from './SkyDome';
-
 interface Props {
   level: number;
   onBuildingClick: (districtId: string, buildingId: string) => void;
@@ -16,7 +15,8 @@ interface Props {
   onBackToCity?: () => void;
   cityBrightness?: number;
   cityBrightnessInstant?: boolean;
-  storyMode?: boolean;
+  focusedItemDistrictId?: string | null;
+  focusedItemBuildingId?: string | null;
 }
 
 const CAM_DISTANCE = 80;
@@ -33,7 +33,7 @@ function getIsometricPosition(): [number, number, number] {
   ];
 }
 
-export default function CityScene({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity, cityBrightness = 1.0, cityBrightnessInstant = false, storyMode = false }: Props) {
+export default function CityScene({ level, onBuildingClick, selectedBuilding, mode, focusedDistrictId, onDistrictClick, onBackToCity, cityBrightness = 1.0, cityBrightnessInstant = false, focusedItemDistrictId, focusedItemBuildingId }: Props) {
   const camPos = getIsometricPosition();
 
   return (
@@ -103,7 +103,10 @@ export default function CityScene({ level, onBuildingClick, selectedBuilding, mo
         focusedDistrictId={focusedDistrictId}
         onDistrictClick={onDistrictClick}
         onBackToCity={onBackToCity}
+        focusedItemDistrictId={focusedItemDistrictId}
+        focusedItemBuildingId={focusedItemBuildingId}
       />
+
     </Canvas>
     </div>
   );

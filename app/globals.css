@@ -80,6 +80,12 @@ body {
   font-family: 'Space Mono', monospace;
 }
 
+/* Shimmer animation for unlock card placeholders */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* Fade in animation */
 @keyframes fadeIn {
   from {
